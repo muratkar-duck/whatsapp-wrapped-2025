@@ -101,7 +101,12 @@
     .chart-box { background: #fff; border-radius: 14px; border: 1px solid var(--line); padding: 10px; }
     canvas { width: 100%; height: 240px; display: block; }
 
-    .word-cloud span { display: inline-block; margin: 6px; line-height: 1; }
+    .word-cloud-frame { background: #0b0b0f; border-radius: 16px; padding: 14px; aspect-ratio: 3 / 2; width: 100%; max-width: 900px; margin: 0 auto; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 16px 38px rgba(0,0,0,0.25); }
+    .word-cloud-frame canvas { width: 100%; height: 100% !important; display: block; }
+    .word-cloud-hint { color: #8e8fa4; font-size: 12px; text-align: center; margin-top: 8px; }
+    .word-cloud-settings { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; }
+    .word-cloud-settings label { display: block; margin-bottom: 6px; color: #e5defc; font-weight: 700; }
+    .word-cloud-settings input, .word-cloud-settings select { width: 100%; margin-bottom: 6px; }
     .emoji-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; text-align: center; }
     .emoji-item { font-size: 26px; }
     .two-col-list { columns: 2; column-gap: 12px; }
@@ -185,6 +190,19 @@
     const navEl = document.getElementById('nav');
     let showFull = false;
 
+    let latestAgg = null;
+    let latestParsed = null;
+    const wordCloudConfig = {
+      maxWordsScreen: 140,
+      maxWordsPrint: 120,
+      minFont: 16,
+      maxFont: 86,
+      minFrequency: 2,
+      rotationRatio: 0.28,
+      allowRotate: true
+    };
+    const WORD_CLOUD_PALETTE = ['#34d399','#22d3ee','#f59e0b','#f472b6','#eab308','#60a5fa','#a855f7','#2dd4bf','#fb7185','#38bdf8','#f97316','#f43f5e','#10b981','#c084fc','#8b5cf6','#facc15'];
+
     document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
     preparePrintBtn.addEventListener('click', prepareForPDF);
     document.getElementById('toggleFullBtn').addEventListener('click', ()=>{
@@ -204,6 +222,8 @@
       const parsed = parseChat(text);
       const stickerIndex = await buildStickerIndex(mediaFiles);
       const aggregates = computeAnalytics(parsed.messages, parsed.range, stickerIndex);
+      latestAgg = aggregates;
+      latestParsed = parsed;
       renderAll(parsed, aggregates);
       renderDebug(parsed, aggregates);
     }
@@ -234,6 +254,7 @@
 
     function prepareForPDF(){
       document.body.classList.add('print-mode');
+      if(latestAgg){ renderWordCloud(latestAgg, 'print'); }
       freezeCanvasesForPrint();
       setTimeout(()=>{ window.print(); }, 500);
     }
@@ -403,7 +424,7 @@
         const tokens = tokenize(m.rawText.replace(urlRegex,''));
         tokens.forEach(t=>{ const norm=stripDiacritics(t); wordFreq.set(norm,(wordFreq.get(norm)||{count:0,forms:new Map()})); const entry=wordFreq.get(norm); entry.count++; const form= t; entry.forms.set(form,(entry.forms.get(form)||0)+1); });
       }
-      const wordCloud = Array.from(wordFreq.entries()).map(([norm,obj])=>{ const bestForm = Array.from(obj.forms.entries()).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length)[0]?.[0]||norm; return {word:bestForm,count:obj.count}; }).sort((a,b)=>b.count-a.count).slice(0,60);
+      const wordCloud = Array.from(wordFreq.entries()).map(([norm,obj])=>{ const bestForm = Array.from(obj.forms.entries()).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length)[0]?.[0]||norm; return {word:bestForm,count:obj.count}; }).sort((a,b)=>b.count-a.count).slice(0,240);
 
       const emojiFreq = new Map();
       const emojiRegex = /[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]/gu;
@@ -682,8 +703,11 @@
       pages.push({id:'page-10',html:`
         <section class="page" id="wordcloud">
           <div class="page-header"><div><div class="pill">Sayfa 10</div><h2 class="page-title">Kelime Bulutu</h2><p class="page-sub">En çok konuşulan kelimeler</p></div></div>
-          <div class="card avoid-break" style="min-height:220px;">
-            <div class="word-cloud">${agg.wordCloud.map(w=>`<span style="font-size:${12+Math.min(w.count*2,42)}px">${escapeHtml(w.word)} (${w.count})</span>`).join('')}</div>
+          <div class="card avoid-break" style="min-height:260px;">
+            <div class="word-cloud-frame">
+              <canvas id="wordCloudCanvas" data-type="wordcloud"></canvas>
+            </div>
+            <div class="word-cloud-hint">Koyu fonda yüksek çözünürlüklü, baskı dostu kelime bulutu.</div>
           </div>
           <div class="two-col" style="margin-top:12px;">
             <div class="card"><h3>Top 10 kelime</h3><ul class="list two-col-list">${topWords.map((w,i)=>`<li class="${i>=7?'print-trim extra':''}">${w.word} — ${w.count}</li>`).join('')}</ul></div>
@@ -830,7 +854,170 @@
         else if(type==='hist') drawHistogram(cv, agg.hist);
         else if(type==='dateweek') drawMapChart(cv, agg.dateWeek);
         else if(type==='overlay') drawOverlay(cv, agg.weeklyOverlay);
+        else if(type==='wordcloud') drawWordCloud(cv, agg, 'screen');
       });
+    }
+
+    function drawWordCloud(canvas, agg, mode='screen'){
+      const wordsRaw = agg?.wordCloud||[];
+      if(!wordsRaw.length) return;
+      const parentRect = canvas.parentElement?.getBoundingClientRect();
+      const cssWidth = Math.max(680, parentRect?.width || canvas.clientWidth || 720);
+      const cssHeight = parentRect?.height || cssWidth * 0.66;
+      const scale = (window.devicePixelRatio||1) * 2;
+      canvas.width = Math.round(cssWidth * scale);
+      canvas.height = Math.round(cssHeight * scale);
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(scale,0,0,scale,0,0);
+      ctx.clearRect(0,0,cssWidth,cssHeight);
+      ctx.fillStyle = '#0b0b0f';
+      ctx.fillRect(0,0,cssWidth,cssHeight);
+
+      const maxWords = mode==='print'? wordCloudConfig.maxWordsPrint : wordCloudConfig.maxWordsScreen;
+      const maxFreq = wordsRaw[0]?.count || 1;
+      const freqThreshold = Math.min(maxFreq, Math.max(wordCloudConfig.minFrequency, Math.floor(maxFreq*0.015)));
+      const words = wordsRaw.filter(w=>w.count>=freqThreshold).slice(0, maxWords);
+      if(!words.length) return;
+      const minFreq = words[words.length-1].count || 1;
+      const seed = deriveWordCloudSeed(agg, words);
+      const rng = mulberry32(seed);
+      const occW = Math.ceil(cssWidth);
+      const occH = Math.ceil(cssHeight);
+      const occupancy = new Uint8Array(occW*occH);
+      const centerX = cssWidth/2; const centerY = cssHeight/2;
+      const placements = [];
+      const angleStep = 0.35;
+      const baseStep = 6;
+
+      for(const w of words){
+        const fontSize = mapFreqToFont(w.count, minFreq, maxFreq);
+        const wordHash = hashString(w.word);
+        const allowRotate = wordCloudConfig.allowRotate;
+        const rotated = allowRotate && (Math.abs(wordHash)%10 < Math.round(wordCloudConfig.rotationRatio*10));
+        const glyph = buildGlyph(w.word, fontSize, rotated);
+        const maxAttempts = 1400;
+        let placed=false;
+        for(let i=0;i<maxAttempts;i++){
+          const theta = i*angleStep + rng()*0.2;
+          const radius = baseStep + (4 + fontSize*0.16) * theta;
+          const x = centerX + Math.cos(theta)*radius;
+          const y = centerY + Math.sin(theta)*radius;
+          if(!fitsGlyph(occupancy, occW, occH, x, y, glyph)) continue;
+          placements.push({text:w.word, fontSize, rotate:rotated, x, y, color: WORD_CLOUD_PALETTE[Math.abs(wordHash)%WORD_CLOUD_PALETTE.length]});
+          stampGlyph(occupancy, occW, occH, x, y, glyph);
+          placed=true; break;
+        }
+        if(!placed) console.debug('Kelime yerleştirilemedi', w.word);
+      }
+
+      ctx.textAlign='center';
+      ctx.textBaseline='middle';
+      ctx.shadowColor='rgba(0,0,0,0.35)';
+      ctx.shadowBlur=4;
+      ctx.shadowOffsetY=1;
+      placements.forEach(p=>{
+        ctx.save();
+        ctx.translate(p.x,p.y);
+        if(p.rotate) ctx.rotate(Math.PI/2);
+        ctx.fillStyle=p.color;
+        ctx.font = `${p.fontSize}px ${getWordCloudFont()}`;
+        ctx.fillText(p.text,0,0);
+        ctx.restore();
+      });
+    }
+
+    function mapFreqToFont(freq, minFreq, maxFreq){
+      const logMin = Math.log(Math.max(minFreq,1));
+      const logMax = Math.log(Math.max(maxFreq,1));
+      const norm = (Math.log(Math.max(freq,1)) - logMin) / Math.max(logMax - logMin, 0.0001);
+      const eased = Math.pow(Math.min(Math.max(norm,0),1), 0.65);
+      return Math.max(wordCloudConfig.minFont, Math.min(wordCloudConfig.maxFont, wordCloudConfig.minFont + eased*(wordCloudConfig.maxFont - wordCloudConfig.minFont)));
+    }
+
+    function buildGlyph(text, fontSize, rotate){
+      const pad = Math.ceil(fontSize*0.3);
+      const tmp = document.createElement('canvas');
+      const ctx = tmp.getContext('2d');
+      ctx.font = `${fontSize}px ${getWordCloudFont()}`;
+      const metrics = ctx.measureText(text);
+      const textWidth = metrics.width;
+      const textHeight = fontSize;
+      const boxWidth = rotate? textHeight : textWidth;
+      const boxHeight = rotate? textWidth : textHeight;
+      tmp.width = Math.ceil(boxWidth + pad*2);
+      tmp.height = Math.ceil(boxHeight + pad*2);
+      ctx.translate(tmp.width/2, tmp.height/2);
+      if(rotate) ctx.rotate(Math.PI/2);
+      ctx.font = `${fontSize}px ${getWordCloudFont()}`;
+      ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillStyle='#fff';
+      ctx.fillText(text,0,0);
+      const data = ctx.getImageData(0,0,tmp.width,tmp.height);
+      return {data,width:tmp.width,height:tmp.height};
+    }
+
+    function fitsGlyph(occ, w, h, cx, cy, glyph){
+      const startX = Math.round(cx - glyph.width/2);
+      const startY = Math.round(cy - glyph.height/2);
+      if(startX<0 || startY<0 || startX + glyph.width >= w || startY + glyph.height >= h) return false;
+      const pixels = glyph.data.data;
+      for(let y=0;y<glyph.height;y++){
+        const row = (startY + y)*w + startX;
+        for(let x=0;x<glyph.width;x++){
+          const alpha = pixels[(y*glyph.width + x)*4 + 3];
+          if(alpha>0 && occ[row + x]) return false;
+        }
+      }
+      return true;
+    }
+
+    function stampGlyph(occ, w, h, cx, cy, glyph){
+      const startX = Math.round(cx - glyph.width/2);
+      const startY = Math.round(cy - glyph.height/2);
+      const pixels = glyph.data.data;
+      for(let y=0;y<glyph.height;y++){
+        const row = (startY + y)*w + startX;
+        for(let x=0;x<glyph.width;x++){
+          const alpha = pixels[(y*glyph.width + x)*4 + 3];
+          if(alpha>0) occ[row + x] = 1;
+        }
+      }
+    }
+
+    function deriveWordCloudSeed(agg, words){
+      const topWord = words[0]?.word||'';
+      const rangePart = `${agg.range?.min||''}|${agg.range?.max||''}`;
+      const vocabHash = hashString(words.slice(0,40).map(w=>`${w.word}:${w.count}`).join('|'));
+      return hashString(`${rangePart}|${topWord}|${words.length}|${vocabHash}`);
+    }
+
+    function getWordCloudFont(){
+      return "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial";
+    }
+
+    function hashString(str){
+      let h = 1779033703 ^ str.length;
+      for(let i=0;i<str.length;i++){
+        h = Math.imul(h ^ str.charCodeAt(i), 3432918353);
+        h = (h << 13) | (h >>> 19);
+      }
+      return (h ^ (h >>> 16)) >>> 0;
+    }
+
+    function mulberry32(a){
+      return function(){
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        let t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function rerenderWordCloudScreen(){
+      const cv = document.getElementById('wordCloudCanvas');
+      if(cv instanceof HTMLCanvasElement && latestAgg){
+        drawWordCloud(cv, latestAgg, 'screen');
+      }
     }
 
     function chartCard(title, data, drawer){
@@ -902,6 +1089,34 @@
       const lines=[`Toplam satır: ${parsed.lines}`,`Toplam mesaj: ${parsed.messages.length}`,`Hata: ${parsed.parseErrors}`,`Aralık: ${parsed.range.min?dayKey(parsed.range.min):'-'} → ${parsed.range.max?dayKey(parsed.range.max):'-'}`];
       lines.push('Tür sayıları: '+JSON.stringify(agg.kindsCount));
       debugEl.innerHTML = '<strong>Debug</strong><br>'+lines.join('<br>');
+      debugEl.appendChild(buildWordCloudControls());
+    }
+
+    function buildWordCloudControls(){
+      const wrap = document.createElement('div');
+      wrap.className = 'word-cloud-settings';
+      wrap.innerHTML = `
+        <div style="font-weight:800;margin-bottom:6px;">Word Cloud Settings</div>
+        <label>Max kelime (ekran)</label>
+        <select id="wcMaxWords">
+          <option value="80">80</option>
+          <option value="120">120</option>
+          <option value="140">140</option>
+          <option value="160">160</option>
+        </select>
+        <label>Min font (px) <span id="wcMinFontVal">${wordCloudConfig.minFont}</span></label>
+        <input type="range" id="wcMinFont" min="12" max="26" value="${wordCloudConfig.minFont}">
+        <label style="display:flex;align-items:center;gap:6px;"><input type="checkbox" id="wcRotate" ${wordCloudConfig.allowRotate?'checked':''}> Dikey kelimeler</label>
+      `;
+      const maxSel = wrap.querySelector('#wcMaxWords');
+      if(maxSel) maxSel.value = String(wordCloudConfig.maxWordsScreen);
+      maxSel?.addEventListener('change', ()=>{ wordCloudConfig.maxWordsScreen = Number(maxSel.value); rerenderWordCloudScreen(); });
+      const minFont = wrap.querySelector('#wcMinFont');
+      const minFontVal = wrap.querySelector('#wcMinFontVal');
+      minFont?.addEventListener('input', ()=>{ wordCloudConfig.minFont = Number(minFont.value); if(minFontVal) minFontVal.textContent = wordCloudConfig.minFont; rerenderWordCloudScreen(); });
+      const rotate = wrap.querySelector('#wcRotate');
+      rotate?.addEventListener('change', ()=>{ wordCloudConfig.allowRotate = rotate.checked; rerenderWordCloudScreen(); });
+      return wrap;
     }
   </script>
 </body>
