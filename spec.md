@@ -54,6 +54,17 @@ Dahil edilenler: text + tüm medya + çağrılar. Sistem ve silinen mesajlar tü
 - Temalar: 10–12 sabit kategori anahtar kelimesi; her kategori için toplam + Murat/Rümeysa örnek mesajı.
 - N-gram (2-3) frekansı: text + stopword temizliği.
 
+### Kelime bulutu görselleştirme
+- Kapsam: stopword sonrası liste; diyakritik-normalize edilmiş kelimeler aynı sayılır (çeşme/cesme vb.).
+- Sıralama: frekansa göre azalan; en fazla 240 kelimelik ham liste, ekranda varsayılan 140, baskıda 120 kelime kullanılır.
+- Eşik: en düşük frekans, max frekansın %1.5’i ile min 2 arasında belirlenir; küçük gürültü kelimeleri elenir.
+- Ölçekleme: `fontSize = minFont + ease(log(freq))*(maxFont-minFont)`; minFont=16px, maxFont≈86px (A4’e göre üst kelime 70–90px).
+- Renk: sabit 16 renk paleti; `hash(kelime) % palette.length` ile deterministik atanır.
+- Döndürme: yalnızca 0° veya 90°; `hash(kelime) % 10 < 3` → dikey (yaklaşık %30). Ayar debug panelinden kapatılabilir.
+- Yerleşim: koyu (#0b0b0f) arkaplanlı, 3:2 oranlı yüksek dpi canvas; Archimedean spiral + piksel maskesiyle çakışmasız paketleme.
+- Determinizm: mulberry32 tohumlanmış PRNG (tarih aralığı + ilk kelime + kelime listesi karması). Math.random() kullanılmaz.
+- Baskı: yazdırma öncesi canvas yeniden çizilir (max 120 kelime) ve görsele dondurulur; arka planın yazdırılması için kullanıcıya hatırlatma.
+
 ## Eğlenceli bölümler
 - Kahkaha algısı: 😂🤣 veya `haha/ahah/kdkd/sjsj/xdd/:p` veya yüksek ünsüz oranlı 5–30 uzunluklu dizeler. Kahkaha mesajı, önceki diğer kişinin mesajına puan yazar; top 20 listesi oluşturulur.
 - Romantik anlar: Romantik kelimeler veya kalp emojisi içeren top 10 text mesajı.
