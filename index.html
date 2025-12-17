@@ -46,6 +46,12 @@
       cursor: pointer;
       box-shadow: 0 8px 18px rgba(177,74,237,0.3);
     }
+    .print-mode * {
+      animation: none !important;
+      transition: none !important;
+    }
+    body.print-mode { width: 210mm; }
+    .print-mode .controls, .print-mode .debug { display: none !important; }
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
     .card {
       background: var(--card);
@@ -98,8 +104,12 @@
       font-size: 12px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     }
+    .print-canvas-image { display: block; height: auto; }
     .hidden { display: none; }
     @media print {
+      .page { break-after: page; }
+      .avoid-break { break-inside: avoid; }
+      .no-print { display: none !important; }
       .controls, .debug, .sticker-label { display: none !important; }
       body { background: white; }
       .page { padding: 12mm; }
@@ -119,6 +129,7 @@
     </div>
     <div class="flex">
       <button id="analyzeBtn">Analiz Et</button>
+      <button id="preparePrintBtn">PDF’e Hazırla</button>
       <span class="pill">İpucu: Dosyayı seç, medya klasörü seç (varsa), sonra yazdır!</span>
     </div>
   </div>
@@ -148,8 +159,10 @@
 
     const contentEl = document.getElementById('content');
     const debugEl = document.getElementById('debug');
+    const preparePrintBtn = document.getElementById('preparePrintBtn');
 
     document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
+    preparePrintBtn.addEventListener('click', prepareForPDF);
 
     let mediaFiles = [];
 
@@ -167,6 +180,41 @@
       renderAll(parsed, aggregates);
       renderDebug(parsed, aggregates);
     }
+
+    function freezeCanvasesForPrint(){
+      document.querySelectorAll('canvas').forEach(canvas => {
+        const exportCanvas = document.createElement('canvas');
+        const width = canvas.offsetWidth || canvas.width;
+        const height = canvas.offsetHeight || canvas.height;
+        exportCanvas.width = width;
+        exportCanvas.height = height;
+        const ctx = exportCanvas.getContext('2d');
+        try {
+          ctx.drawImage(canvas, 0, 0, width, height);
+        } catch (e) {
+          // fallback to original canvas content if drawImage fails
+          exportCanvas.width = canvas.width;
+          exportCanvas.height = canvas.height;
+          ctx.drawImage(canvas, 0, 0);
+        }
+        const img = document.createElement('img');
+        img.src = exportCanvas.toDataURL('image/png');
+        img.style.width = width + 'px';
+        img.style.height = height + 'px';
+        img.className = 'print-canvas-image';
+        canvas.replaceWith(img);
+      });
+    }
+
+    function prepareForPDF(){
+      document.body.classList.add('print-mode');
+      freezeCanvasesForPrint();
+      setTimeout(()=>{ window.print(); }, 500);
+    }
+
+    window.addEventListener('afterprint', ()=>{
+      document.body.classList.remove('print-mode');
+    });
 
     function parseChat(text){
       const lines = text.split(/\r?\n/);
