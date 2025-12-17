@@ -6,135 +6,157 @@
   <title>WhatsApp 2025 Wrapped</title>
   <style>
     :root {
-      --bg: #f7f2f9;
-      --text: #1f1a2e;
+      --bg: #f6f3f9;
+      --page: #ffffff;
+      --text: #1f1633;
+      --muted: #6c6880;
       --accent: #b14aed;
-      --muted: #6c6780;
-      --card: #ffffff;
+      --accent-soft: #efe7fb;
+      --card: #fbf9fe;
+      --line: #e5ddf5;
     }
     * { box-sizing: border-box; }
     body {
-      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      margin: 0;
+      font-family: 'Inter','Segoe UI',system-ui,-apple-system,sans-serif;
       background: var(--bg);
       color: var(--text);
-      margin: 0;
-      padding: 0;
+      line-height: 1.5;
     }
-    h1,h2,h3,h4 { margin: 0 0 8px; color: var(--text); }
-    p { margin: 4px 0; }
+    h1,h2,h3,h4 { margin: 0 0 8px; font-weight: 800; letter-spacing: -0.3px; }
+    p { margin: 0 0 8px; }
+
     .controls {
       position: sticky;
       top: 0;
-      background: rgba(247,242,249,0.95);
-      backdrop-filter: blur(8px);
-      padding: 12px 16px;
+      z-index: 20;
+      background: rgba(246,243,249,0.96);
+      backdrop-filter: blur(10px);
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      z-index: 10;
-      border-bottom: 1px solid #e0d7eb;
+      gap: 12px 18px;
+      align-items: flex-end;
     }
-    .controls label { font-weight: 600; color: var(--muted); font-size: 14px; display:block; margin-bottom:4px; }
-    .controls input[type=file] { padding: 6px; background: #fff; border: 1px solid #d3c7e6; border-radius: 8px; }
+    .controls label { font-weight: 700; font-size: 13px; color: var(--muted); display:block; margin-bottom: 6px; }
+    .controls input[type=file] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: #fff; min-width: 220px; }
     .controls button {
-      background: var(--accent);
       border: none;
-      color: white;
-      padding: 10px 16px;
       border-radius: 10px;
-      font-weight: 700;
+      padding: 10px 14px;
+      font-weight: 800;
       cursor: pointer;
-      box-shadow: 0 8px 18px rgba(177,74,237,0.3);
+      color: #fff;
+      background: var(--accent);
+      box-shadow: 0 10px 26px rgba(177,74,237,0.25);
     }
-    .print-mode * {
-      animation: none !important;
-      transition: none !important;
-    }
-    body.print-mode { width: 210mm; }
-    .print-mode .controls, .print-mode .debug { display: none !important; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
-    .card {
-      background: var(--card);
-      border-radius: 16px;
-      padding: 16px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
-      page-break-inside: avoid;
-    }
-    .pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      background: #efe9f8;
-      border-radius: 999px;
-      color: var(--muted);
-      font-weight: 600;
-      font-size: 13px;
-    }
-    canvas { width: 100%; height: 260px; display: block; }
-    .section-title { font-size: 20px; margin: 24px 0 12px; }
-    .cover, .backcover {
-      height: 100vh;
+    .controls .ghost { background: #2f2646; box-shadow: none; color: #fff; }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 10px; background: var(--accent-soft); border-radius: 999px; color: var(--accent); font-weight: 700; font-size: 13px; }
+
+    .screen-nav {
+      position: sticky;
+      top: 78px;
+      z-index: 15;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 12px;
-      text-align: center;
-      background: linear-gradient(135deg, #ffe3f3, #e6e9ff);
-      color: #1a1035;
-      page-break-after: always;
+      gap: 6px;
+      padding: 10px 16px;
+      overflow-x: auto;
+      background: rgba(246,243,249,0.96);
+      border-bottom: 1px solid var(--line);
     }
-    .page { padding: 24px 32px; page-break-after: always; }
+    .screen-nav a { text-decoration: none; color: var(--muted); padding: 8px 10px; border-radius: 10px; background: #fff; border: 1px solid var(--line); font-weight: 700; font-size: 13px; white-space: nowrap; }
+    .screen-nav a:hover { background: var(--accent-soft); color: var(--accent); }
+
+    .pages { max-width: 940px; margin: 0 auto 48px; padding: 12px; }
+    .page {
+      background: var(--page);
+      width: 210mm;
+      min-height: 297mm;
+      margin: 18px auto;
+      padding: 20mm 18mm;
+      box-shadow: 0 18px 38px rgba(20,12,40,0.08);
+      border-radius: 18px;
+      page-break-after: always;
+      break-after: page;
+    }
     .page:last-child { page-break-after: auto; }
+    .page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+    .page-title { font-size: 28px; }
+    .page-sub { color: var(--muted); font-weight: 600; margin-top: 2px; }
+
+    .grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 14px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,0.9); }
+    .card h3 { font-size: 16px; margin-bottom: 6px; }
+    .card h4 { font-size: 14px; margin-top: 8px; }
+    .kpi { font-size: 28px; font-weight: 800; margin: 4px 0; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .tag { background: var(--accent-soft); color: var(--accent); padding: 3px 8px; border-radius: 10px; font-weight: 700; font-size: 12px; }
     .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-    .list li { padding: 10px 12px; background: #f6f1fb; border-radius: 12px; }
-    .tag { background: #f0e9ff; color: #5d3fd3; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
-    .word-cloud span { display: inline-block; margin: 6px; }
-    .flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .list li { padding: 10px 12px; border-radius: 12px; background: #f8f6fb; border: 1px solid var(--line); font-size: 13px; }
+
+    .two-col { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .badge { display: inline-flex; align-items: center; gap: 6px; background: #111; color: #fff; padding: 6px 10px; border-radius: 999px; font-size: 12px; }
+    .note { font-size: 11px; color: var(--muted); }
+    .chart-box { background: #fff; border-radius: 14px; border: 1px solid var(--line); padding: 10px; }
+    canvas { width: 100%; height: 240px; display: block; }
+
+    .word-cloud span { display: inline-block; margin: 6px; line-height: 1; }
+    .emoji-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; text-align: center; }
+    .emoji-item { font-size: 26px; }
+    .two-col-list { columns: 2; column-gap: 12px; }
+    .two-col-list li { break-inside: avoid; }
+
+    .closing-input { width: 100%; min-height: 160px; padding: 12px; border-radius: 12px; border: 1px solid var(--line); font-size: 14px; }
+
+    .print-canvas-image { display: block; width: 100%; height: auto; }
+    .hidden { display: none !important; }
+    .no-print { }
+    .extra { display: none; }
+    body.show-full .extra { display: block; }
+    .print-mode * { animation: none !important; transition: none !important; }
     .debug {
       position: fixed; right: 12px; bottom: 12px;
-      width: 320px;
-      max-height: 70vh;
-      overflow: auto;
-      background: rgba(18,16,34,0.9);
-      color: #e5defc;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 12px;
+      width: 320px; max-height: 70vh; overflow: auto;
+      background: rgba(18,16,34,0.9); color: #e5defc;
+      padding: 12px; border-radius: 12px; font-size: 12px;
       box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     }
-    .print-canvas-image { display: block; height: auto; }
-    .hidden { display: none; }
+
     @media print {
+      body { background: #fff; }
+      .controls, .screen-nav, .debug, .no-print { display: none !important; }
+      .page { box-shadow: none; margin: 0 auto; width: 210mm; padding: 18mm 18mm 16mm; }
+      .page, .page * { transition: none !important; animation: none !important; }
       .page { break-after: page; }
       .avoid-break { break-inside: avoid; }
-      .no-print { display: none !important; }
-      .controls, .debug, .sticker-label { display: none !important; }
-      body { background: white; }
-      .page { padding: 12mm; }
+      .print-trim { display: none !important; }
+      .extra { display: none !important; }
       canvas { height: 200px; }
     }
   </style>
 </head>
 <body>
-  <div class="controls">
+  <div class="controls no-print">
     <div>
-      <label>WhatsApp .txt yükle</label>
+      <label>Sohbet .txt</label>
       <input type="file" id="fileInput" accept="text/plain">
     </div>
     <div>
-      <label>Medya klasörü seç (opsiyonel)</label>
+      <label>Medya klasörü (opsiyonel)</label>
       <input type="file" id="mediaInput" webkitdirectory directory multiple>
     </div>
-    <div class="flex">
+    <div class="flex" style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
       <button id="analyzeBtn">Analiz Et</button>
       <button id="preparePrintBtn">PDF’e Hazırla</button>
-      <span class="pill">İpucu: Dosyayı seç, medya klasörü seç (varsa), sonra yazdır!</span>
+      <button id="toggleFullBtn" class="ghost">Tüm listeleri göster</button>
+      <span class="pill">İpucu: Dosyayı seç, analiz et, PDF’e hazırlayıp yazdır (arka plan grafiklerini aç).</span>
     </div>
   </div>
-  <div id="content"></div>
+  <div class="screen-nav no-print" id="nav"></div>
+  <div id="content" class="pages"></div>
   <div id="debug" class="debug hidden"></div>
+
   <script>
     const TURKISH_STOP = new Set(['ve','veya','ile','ama','fakat','lakin','de','da','ki','bu','su','şu','o','bir','bi','ne','mi','mı','mu','mü','için','gibi','çünkü','ya','sen','ben','biz','siz','onlar','şimdi','daha','çok','az','her','en','ile','ya','yao','diye','di','değil','vardı','böyle','hala','hem','hep','hepimiz','yani','ise','yada','veya','veya','şey','aslında','muhtemelen','mı','mi','mu','mü','şu','falan','filan','bugün','yarın','akşam','sabah','öğlen','sonra','önce']);
     const ROMANTIC = ['aşkım','canım','bebeğim','tatlım','seviyorum','seni seviyorum','özledim','sevgilim','kalbim','hayatım','prenses','prensim','balım','güzelim','yavrum','çekim'];
@@ -160,12 +182,17 @@
     const contentEl = document.getElementById('content');
     const debugEl = document.getElementById('debug');
     const preparePrintBtn = document.getElementById('preparePrintBtn');
+    const navEl = document.getElementById('nav');
+    let showFull = false;
 
     document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
     preparePrintBtn.addEventListener('click', prepareForPDF);
+    document.getElementById('toggleFullBtn').addEventListener('click', ()=>{
+      showFull = !showFull;
+      document.body.classList.toggle('show-full', showFull);
+    });
 
     let mediaFiles = [];
-
     document.getElementById('mediaInput').addEventListener('change', (e)=>{
       mediaFiles = Array.from(e.target.files || []);
     });
@@ -192,7 +219,6 @@
         try {
           ctx.drawImage(canvas, 0, 0, width, height);
         } catch (e) {
-          // fallback to original canvas content if drawImage fails
           exportCanvas.width = canvas.width;
           exportCanvas.height = canvas.height;
           ctx.drawImage(canvas, 0, 0);
@@ -211,10 +237,7 @@
       freezeCanvasesForPrint();
       setTimeout(()=>{ window.print(); }, 500);
     }
-
-    window.addEventListener('afterprint', ()=>{
-      document.body.classList.remove('print-mode');
-    });
+    window.addEventListener('afterprint', ()=> document.body.classList.remove('print-mode'));
 
     function parseChat(text){
       const lines = text.split(/\r?\n/);
@@ -259,7 +282,7 @@
     function dayKey(ts){ return `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`; }
     function monthKey(ts){ return `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}`; }
     function hourOfDay(ts){ return ts.getHours(); }
-    function weekday(ts){ return (ts.getDay()+6)%7; } // Monday=0
+    function weekday(ts){ return (ts.getDay()+6)%7; }
 
     function weekKey(ts){
       const d = new Date(ts.getFullYear(), ts.getMonth(), ts.getDate());
@@ -328,7 +351,6 @@
         if(mediaCounts[m.kind]!==undefined) mediaCounts[m.kind]++;
       }
 
-      // reply times (run based)
       let lastSender=null; let lastRunStart=null; let lastMsg=null;
       for(const m of included){
         if(m.sender!==lastSender){
@@ -340,12 +362,9 @@
             replyDetails.push({from:lastSender, to:m.sender, start:lastRunStart, end:m.ts, raw:diff, prev:lastMsg?lastMsg.rawText:'' , reply:m.rawText});
           }
           lastSender=m.sender; lastRunStart=m.ts; lastMsg=m;
-        } else {
-          // same run, keep first timestamp
         }
       }
 
-      // streaks: both sent that day
       const bothDay = new Set();
       const perDaySender = new Map();
       for(const m of included){
@@ -360,12 +379,10 @@
       const longestStreak = streaks.sort((a,b)=>b.len-a.len||a.start-b.start)[0]||{len:0};
       const streakBreaks = streaks.map(s=>({date:new Date(s.end.getFullYear(), s.end.getMonth(), s.end.getDate()+1), len:s.len}));
 
-      // longest messages top 5 each
       for(const k of Object.keys(longest)){
         longest[k] = longest[k].sort((a,b)=>b.chars-a.chars).slice(0,5);
       }
 
-      // avg lengths
       const avgChars = textMessages.length ? Math.round(textMessages.reduce((a,b)=>a+stripUrls(b.rawText).length,0)/textMessages.length) : 0;
       const avgWords = textMessages.length ? Math.round(textMessages.reduce((a,b)=>a+tokenize(b.rawText).length,0)/textMessages.length) : 0;
 
@@ -375,15 +392,12 @@
 
       const outliers = replyDetails.sort((a,b)=>b.raw-a.raw).slice(0,10);
 
-      // busy and calm days
       const dayEntries = Array.from(daily.entries()).map(([k,v])=>({key:k,count:v}));
       const busiest = dayEntries.slice().sort((a,b)=>b.count-a.count||a.key.localeCompare(b.key)).slice(0,10);
       const calmest = dayEntries.slice().sort((a,b)=>a.count-b.count||a.key.localeCompare(b.key)).slice(0,10);
 
-      // media/sticker grouping
       const stickerGroups = computeStickers(included, stickerIndex);
 
-      // word cloud
       const wordFreq = new Map();
       for(const m of textMessages){
         const tokens = tokenize(m.rawText.replace(urlRegex,''));
@@ -391,7 +405,6 @@
       }
       const wordCloud = Array.from(wordFreq.entries()).map(([norm,obj])=>{ const bestForm = Array.from(obj.forms.entries()).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length)[0]?.[0]||norm; return {word:bestForm,count:obj.count}; }).sort((a,b)=>b.count-a.count).slice(0,60);
 
-      // emoji counts
       const emojiFreq = new Map();
       const emojiRegex = /[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]/gu;
       for(const m of textMessages){
@@ -400,167 +413,130 @@
       }
       const emojiTop = Array.from(emojiFreq.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10);
 
-      // topic categories
-      const topicCounts = {}; const topicSamples={};
-      for(const cat of Object.keys(TOPIC_CATS)){ topicCounts[cat]=0; topicSamples[cat]={m:null,r:null}; }
+      const topicCounts={};
+      const topicSamples={};
+      for(const [cat,kw] of Object.entries(TOPIC_CATS)){ topicCounts[cat]=0; topicSamples[cat]={m:null,r:null}; }
       for(const m of textMessages){
-        const lower = stripDiacritics(m.rawText.toLowerCase());
-        for(const [cat,keys] of Object.entries(TOPIC_CATS)){
-          const hits = keys.some(k=> lower.includes(stripDiacritics(k)) );
-          if(hits){ topicCounts[cat]++; if(m.sender==='Murat Kar' && !topicSamples[cat].m) topicSamples[cat].m=m; if(m.sender==='Rümeysa Akbulut' && !topicSamples[cat].r) topicSamples[cat].r=m; }
+        const tokens = tokenize(m.rawText);
+        for(const [cat,kw] of Object.entries(TOPIC_CATS)){
+          if(tokens.some(t=>kw.includes(t))){
+            topicCounts[cat]++;
+            if(m.sender==='Murat Kar' && !topicSamples[cat].m) topicSamples[cat].m=m;
+            if(m.sender==='Rümeysa Akbulut' && !topicSamples[cat].r) topicSamples[cat].r=m;
+          }
         }
       }
 
-      // n-gram frequency (2-3 grams)
-      const ngramFreq = new Map();
+      const ngramCounts = new Map();
       for(const m of textMessages){
-        const toks = tokenize(m.rawText);
+        const tokens = tokenize(m.rawText);
         for(let n=2;n<=3;n++){
-          for(let i=0;i<=toks.length-n;i++){
-            const g = toks.slice(i,i+n).join(' ');
-            ngramFreq.set(g,(ngramFreq.get(g)||0)+1);
+          for(let i=0;i<=tokens.length-n;i++){
+            const key=tokens.slice(i,i+n).join(' ');
+            ngramCounts.set(key,(ngramCounts.get(key)||0)+1);
           }
         }
       }
-      const topNgrams = Array.from(ngramFreq.entries()).sort((a,b)=>b[1]-a[1]).slice(0,12);
+      const topNgrams = Array.from(ngramCounts.entries()).sort((a,b)=>b[1]-a[1]).slice(0,12);
 
-      // laughter attribution
-      const laughs=[]; const laughScores=new Map();
-      for(let i=0;i<included.length;i++){
-        const m=included[i];
-        if(m.kind==='text' && isLaughter(m.rawText)){
-          const prev = findPrevOther(included,i,m.sender);
-          if(prev){
-            const key = prev.rawText;
-            const arr = laughScores.get(prev)||{msg:prev,laughs:[]};
-            arr.laughs.push(m.rawText);
-            laughScores.set(prev,arr);
-          }
-        }
-      }
-      const laughRanking = Array.from(laughScores.values()).map(v=>({msg:v.msg,laughs:v.laughs,count:v.laughs.length})).sort((a,b)=>b.count-a.count).slice(0,20);
-
-      // romance
-      const romanceMessages = textMessages.filter(m=> ROMANTIC.some(w=> stripDiacritics(m.rawText.toLowerCase()).includes(stripDiacritics(w)) ) || /❤|💕|💖|💘|💓|💗|💝|❤️/u.test(m.rawText)).sort((a,b)=>b.rawText.length-a.rawText.length).slice(0,10);
-
-      // date'i module
-      const dateMentions=[]; const dateWeek = new Map(); const dateCats=new Map();
+      const laughRanking=[];
       for(const m of textMessages){
-        const cleanLower=stripDiacritics(m.rawText.toLowerCase());
-        if(/datei|date'i|date i|date’i/i.test(cleanLower)){
+        if(laughRegex.test(m.rawText)){
+          const prev = included.findLast(x=>x.ts<m.ts && x.sender!==m.sender && x.kind==='text');
+          if(prev){
+            const current = laughRanking.find(x=>x.msg===prev);
+            if(current){ current.count++; current.laughs.push(m.rawText); }
+            else laughRanking.push({msg:prev,count:1,laughs:[m.rawText]});
+          }
+        }
+      }
+      laughRanking.sort((a,b)=>b.count-a.count).splice(20);
+
+      const romanceMessages = textMessages.filter(m=>ROMANTIC.some(r=>m.rawText.toLowerCase().includes(r)) || /❤️|💜|💕|💖|💘/.test(m.rawText)).sort((a,b)=>b.rawText.length-a.rawText.length).slice(0,10);
+
+      const dateMentions=[]; const dateCats=new Map(); const dateWeek=new Map();
+      for(const m of textMessages){
+        const norm = stripDiacritics(m.rawText.toLowerCase());
+        if(DATEI_TOKENS.some(t=>norm.includes(t))){
           dateMentions.push(m);
-          const wk=weekKey(m.ts).key; dateWeek.set(wk,(dateWeek.get(wk)||0)+1);
-          const cat = extractDateCategory(cleanLower);
+          const parts = tokenize(norm);
+          const idx = parts.findIndex(p=>DATEI_TOKENS.includes(p));
+          const cat = idx>0?parts[idx-1]:'genel';
           dateCats.set(cat,(dateCats.get(cat)||0)+1);
+          const wk = weekKey(m.ts); dateWeek.set(wk.key,(dateWeek.get(wk.key)||0)+1);
         }
       }
 
-      // weekly overlay
-      const weeklyOverlay = buildWeeklyOverlay(included, laughRanking, romanceMessages, dateMentions);
+      const overlay = buildOverlay(daily, laughRanking, romanceMessages, dateWeek);
 
-      return {
-        countsBySender, kindsCount, daily, monthly, hourly, weekDay, longest, avgChars, avgWords, replyIntervals, replyIntervalsRaw, meanReply, medianReply, hist, outliers, busiest, calmest, streaks, longestStreak, streakBreaks, callDurations, callCounts, missedBySender, mediaCounts, wordCloud, emojiTop, topicCounts, topicSamples, topNgrams, laughRanking, romanceMessages, dateMentions, dateWeek, dateCats, stickerGroups, weeklyOverlay
-      };
+      return {countsBySender,kindsCount,daily,monthly,hourly,weekDay,longest,replyIntervals,replyIntervalsRaw,replyDetails,hist,meanReply,medianReply,outliers,busiest,calmest,mediaCounts,callCounts,callDurations,missedBySender,stickerGroups,wordCloud,emojiTop,topicCounts,topicSamples,topNgrams,laughRanking,romanceMessages,dateMentions,dateCats,dateWeek:fillWeek(dateWeek),weeklyOverlay:overlay,longestStreak,streaks,streakBreaks,avgChars,avgWords,range};
+    }
+
+    function fillWeek(map){
+      const arr = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+      return new Map(arr);
     }
 
     function parseDuration(text){
-      let total=0;
-      const sn = /([0-9]+) sn\./i.exec(text); if(sn) total+=Number(sn[1]);
-      const dk = /([0-9]+) dk\./i.exec(text); if(dk) total+=Number(dk[1])*60;
-      const saat = /([0-9]+) saat/i.exec(text); if(saat) total+=Number(saat[1])*3600;
-      return total;
+      const m = text.match(/(\d+) saat/) || [];
+      const h = Number(m[1]||0);
+      const m2 = text.match(/(\d+) dk/) || [];
+      const min = Number(m2[1]||0);
+      const s = text.match(/(\d+) sn/) || [];
+      const sec = Number(s[1]||0);
+      return h*3600 + min*60 + sec;
     }
 
     function bucketReply(list){
       const buckets=[0,0,0,0,0,0,0,0];
-      const ranges=[[0,30],[30,60],[60,300],[300,900],[900,3600],[3600,10800],[10800,36000],[36000,43200]];
-      for(const v of list){
-        for(let i=0;i<ranges.length;i++){
-          const [a,b]=ranges[i];
-          if(v>=a && v<b){ buckets[i]++; break; }
-        }
-      }
+      list.forEach(sec=>{
+        if(sec<=30) buckets[0]++; else if(sec<=60) buckets[1]++; else if(sec<=300) buckets[2]++; else if(sec<=900) buckets[3]++; else if(sec<=3600) buckets[4]++; else if(sec<=10800) buckets[5]++; else if(sec<=36000) buckets[6]++; else buckets[7]++;
+      });
       return buckets;
     }
 
-    function isLaughter(text){
-      if(laughRegex.test(text)) return true;
-      const clean = text.replace(urlRegex,'');
-      const tokens = clean.split(/\s+/);
-      return tokens.some(t=> t.length>=5 && t.length<=30 && /[haksjdg]/i.test(t) && (t.replace(/[aeiouıioöuü]/gi,'').length / t.length) > 0.5);
-    }
-
-    function findPrevOther(list, idx, sender){
-      for(let i=idx-1;i>=0;i--){ if(list[i].sender!==sender) return list[i]; }
-      return null;
-    }
-
-    function extractDateCategory(text){
-      const tokens = text.split(/\s+/);
-      for(let i=0;i<tokens.length;i++){
-        const t = tokens[i];
-        if(/datei|date'i|date’i|date/.test(t)){
-          for(let j=i-1;j>=0;j--){ const cand = tokens[j]; if(TURKISH_STOP.has(cand)) continue; return stripDiacritics(cand); }
-        }
-      }
-      return 'belirsiz';
-    }
-
     async function buildStickerIndex(files){
-      const stickers = files.filter(f=>/STICKER/i.test(f.name) && f.name.toLowerCase().endsWith('.webp'));
-      const index = new Map();
+      const stickers = files.filter(f=>/STICKER-.*\.webp$/i.test(f.name));
+      const res=[];
       for(const f of stickers){
-        const entry = {name:f.name, size:f.size, type:f.type};
-        index.set(f.name, entry);
+        const buf = await f.arrayBuffer();
+        const hash = await crypto.subtle.digest('SHA-256', buf);
+        const view = new Uint8Array(hash).slice(0,4);
+        const hex = Array.from(view).map(x=>x.toString(16).padStart(2,'0')).join('');
+        res.push({name:f.name, size:f.size, hash:hex});
       }
-      // group by size
-      const sizeMap = new Map();
-      stickers.forEach(f=>{ if(!sizeMap.has(f.size)) sizeMap.set(f.size,[]); sizeMap.get(f.size).push(f); });
-      // hash only if collision
-      const hashMap = new Map();
-      for(const [size,list] of sizeMap.entries()){
-        if(list.length>1){
-          for(const f of list){
-            const buf = await f.arrayBuffer();
-            const hash = await crypto.subtle.digest('SHA-256', buf);
-            const hex = Array.from(new Uint8Array(hash)).slice(0,4).map(b=>b.toString(16).padStart(2,'0')).join('');
-            hashMap.set(f.name, `${size} bayt • ${hex}`);
-          }
-        }
-      }
-      return {byName:index, hashMap};
+      return res;
     }
 
-    function computeStickers(messages, stickerIndex){
-      const groups = new Map();
+    function computeStickers(messages, index){
+      const groups=new Map();
       for(const m of messages){
         if(m.kind!=='sticker') continue;
-        const match = m.rawText.match(/<([^>]+)>/);
-        const filename = match?match[1]:null;
-        let key = 'bilinmiyor';
-        if(filename){
-          const entry = stickerIndex.byName.get(filename);
-          if(entry){ key = `${entry.size} bayt`; if(stickerIndex.hashMap.has(filename)) key = stickerIndex.hashMap.get(filename); }
-        }
-        if(!groups.has(key)) groups.set(key,{key,count:0, samples:[]});
-        const g = groups.get(key); g.count++; if(g.samples.length<3) g.samples.push({ts:m.ts, sender:m.sender});
+        const match = m.rawText.match(/<([^>]*-STICKER-[^>]*)>/);
+        const file = match?match[1]:'';
+        const meta = index.find(i=>file.includes(i.name));
+        const key = meta? `${meta.size} bayt${meta.hash?` • ${meta.hash}`:''}` : 'Sticker';
+        const arr = groups.get(key)||{key,label:localStorage.getItem('label_'+key)||'',count:0,samples:[]};
+        arr.count++; if(arr.samples.length<3) arr.samples.push(m);
+        groups.set(key,arr);
       }
-      const arr = Array.from(groups.values()).sort((a,b)=>b.count-a.count).slice(0,8);
-      arr.forEach(g=>{ g.label = localStorage.getItem('label_'+g.key)||''; });
-      return arr;
+      return Array.from(groups.values()).sort((a,b)=>b.count-a.count);
     }
 
-    function buildWeeklyOverlay(messages, laughRanking, romanceMessages, dateMentions){
-      const weeks = new Map();
-      for(const m of messages){ const wk=weekKey(m.ts).key; if(!weeks.has(wk)) weeks.set(wk,{msg:0,laugh:0,rom:0,datei:0}); weeks.get(wk).msg++; }
-      laughRanking.forEach(l=>{ const wk=weekKey(l.msg.ts).key; if(weeks.has(wk)) weeks.get(wk).laugh += l.count; });
-      romanceMessages.forEach(m=>{ const wk=weekKey(m.ts).key; if(weeks.has(wk)) weeks.get(wk).rom++; });
-      dateMentions.forEach(m=>{ const wk=weekKey(m.ts).key; if(weeks.has(wk)) weeks.get(wk).datei++; });
-      const arr = Array.from(weeks.entries()).map(([k,v])=>({key:k,...v})).sort((a,b)=>a.key.localeCompare(b.key));
-      const normField = f=>{
-        const max = Math.max(...arr.map(a=>a[f]||0),1);
-        arr.forEach(a=>{ a[f+'Norm']= Math.round((a[f]||0)/max*100); });
-      };
+    function buildOverlay(daily, laughs, romance, dateWeek){
+      const byWeek = new Map();
+      for(const [k,v] of daily.entries()){
+        const dParts = k.split('-');
+        const ts = new Date(Number(dParts[0]), Number(dParts[1])-1, Number(dParts[2]));
+        const wk = weekKey(ts).key;
+        byWeek.set(wk,(byWeek.get(wk)||{msg:0,laugh:0,rom:0,datei:0}));
+        byWeek.get(wk).msg += v;
+      }
+      laughs.forEach(l=>{ const wk = weekKey(l.msg.ts).key; byWeek.set(wk,(byWeek.get(wk)||{msg:0,laugh:0,rom:0,datei:0})); byWeek.get(wk).laugh += l.count; });
+      romance.forEach(r=>{ const wk = weekKey(r.ts).key; byWeek.set(wk,(byWeek.get(wk)||{msg:0,laugh:0,rom:0,datei:0})); byWeek.get(wk).rom += 1; });
+      dateWeek.forEach((v,k)=>{ byWeek.set(k,(byWeek.get(k)||{msg:0,laugh:0,rom:0,datei:0})); byWeek.get(k).datei += v; });
+      const arr = Array.from(byWeek.entries()).map(([k,v])=>({key:k,...v})).sort((a,b)=>a.key.localeCompare(b.key));
+      const normField = f=>{ const max = Math.max(...arr.map(a=>a[f]||0),1); arr.forEach(a=>{ a[f+'Norm']= Math.round((a[f]||0)/max*100); }); };
       ['msg','laugh','rom','datei'].forEach(normField);
       return arr;
     }
@@ -572,84 +548,286 @@
       return `${s} sn`;
     }
 
+    function truncate(str, len){
+      if(!str) return '';
+      return str.length>len ? str.slice(0,len-1)+'…' : str;
+    }
+
     function renderAll(parsed, agg){
       contentEl.innerHTML='';
+      navEl.innerHTML='';
       const rangeText = parsed.range.min? `${dayKey(parsed.range.min)} — ${dayKey(parsed.range.max)}` : 'Tarih yok';
-      contentEl.appendChild(html(`
-        <div class="cover">
+      const pages=[];
+
+      pages.push({id:'page-1',html:`
+        <section class="page cover" style="background:linear-gradient(135deg,#ffe3f3,#e6e9ff);display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-end;">
           <div class="pill">WhatsApp 2025 Wrapped</div>
-          <h1>Birlikte geçen mesajlı yıl</h1>
-          <p>${rangeText}</p>
-        </div>`));
+          <h1 class="page-title" style="font-size:32px;">Murat ♥ Rümeysa — 2025 Wrapped</h1>
+          <p class="page-sub">${rangeText}</p>
+          <p class="muted">Birlikte geçen mesajlı yılın sakin ve romantik özeti</p>
+        </section>`});
 
-      // Summary page
       const total = (agg.countsBySender['Murat Kar']||0) + (agg.countsBySender['Rümeysa Akbulut']||0);
-      contentEl.appendChild(html(`<div class="page">
-        <h2>Özet Pano</h2>
-        <div class="grid">
-          <div class="card"><h3>Toplam mesaj</h3><div class="pill">${total}</div><p>Murat: ${agg.countsBySender['Murat Kar']||0}</p><p>Rümeysa: ${agg.countsBySender['Rümeysa Akbulut']||0}</p></div>
-          <div class="card"><h3>Ortalama uzunluk</h3><p>${agg.avgChars} karakter</p><p>${agg.avgWords} kelime</p></div>
-          <div class="card"><h3>En uzun seri</h3><p>${agg.longestStreak.len||0} gün</p><p>${agg.longestStreak.start?dayKey(agg.longestStreak.start):''} → ${agg.longestStreak.end?dayKey(agg.longestStreak.end):''}</p></div>
-          <div class="card"><h3>Çağrı Özeti</h3><p>Sesli: ${agg.callCounts.voice} (${formatDuration(agg.callDurations.voice)})</p><p>Görüntülü: ${agg.callCounts.video} (${formatDuration(agg.callDurations.video)})</p><p>Kaçırılan: ${agg.callCounts.missedVoice+agg.callCounts.missedVideo}</p></div>
-        </div>
-      </div>`));
+      const kpis = [
+        {label:'Toplam mesaj',value:total,desc:'Tüm sohbet akışı'},
+        {label:'Murat mesaj',value:agg.countsBySender['Murat Kar']||0,desc:'Gönderilen'},
+        {label:'Rümeysa mesaj',value:agg.countsBySender['Rümeysa Akbulut']||0,desc:'Gönderilen'},
+        {label:'Foto/Video/Ses/Sticker',value:`${agg.mediaCounts.photo||0}/${agg.mediaCounts.video||0}/${agg.mediaCounts.audio||0}/${agg.mediaCounts.sticker||0}`,desc:'Medya adedi'},
+        {label:'Yanıt süresi ort.',value:formatDuration(agg.meanReply),desc:'Run tabanlı'},
+        {label:'Yanıt süresi medyan',value:formatDuration(agg.medianReply),desc:''},
+        {label:'En uzun streak',value:`${agg.longestStreak.len||0} gün`,desc: agg.longestStreak.start?`${dayKey(agg.longestStreak.start)} → ${dayKey(agg.longestStreak.end)}`:''},
+        {label:'Çağrı süresi',value:`${formatDuration(agg.callDurations.voice+agg.callDurations.video)}`,desc:`${agg.callCounts.voice+agg.callCounts.video} yanıtlanan`},
+        {label:'Kahkaha anı',value:agg.laughRanking.length,desc:'Top 20 listesi'},
+      ];
+      pages.push({id:'page-2',html:`
+        <section class="page" id="summary">
+          <div class="page-header"><div><div class="pill">Sayfa 2</div><h2 class="page-title">Özet Pano</h2><p class="page-sub">Yılın ana rakamları</p></div></div>
+          <div class="grid">
+            ${kpis.map(k=>`<div class="card" style="grid-column: span 4;" ><h3>${k.label}</h3><div class="kpi">${k.value}</div><div class="muted">${k.desc}</div></div>`).join('')}
+          </div>
+        </section>`});
 
-      // Page A stats and charts
-      const pageA = html('<div class="page"><h2>A) Sayısal / İstatistik</h2><div class="grid"></div></div>');
-      const gridA = pageA.querySelector('.grid');
-      gridA.appendChild(chartCard('Günlük mesaj grafiği', agg.daily, drawLineChart));
-      gridA.appendChild(chartCard('Aylık mesaj grafiği', agg.monthly, drawBarChartMonth));
-      gridA.appendChild(chartCard('24 saat dağılımı', agg.hourly, drawBarChartHours));
-      gridA.appendChild(chartCard('Haftanın günleri', agg.weekDay, drawBarChartWeekdays));
-      gridA.appendChild(html(`<div class="card"><h3>En yoğun & sakin günler</h3><div class="flex"><div><h4>En yoğun</h4><ul class="list">${agg.busiest.map(d=>`<li>${d.key}: ${d.count}</li>`).join('')}</ul></div><div><h4>En sakin</h4><ul class="list">${agg.calmest.map(d=>`<li>${d.key}: ${d.count}</li>`).join('')}</ul></div></div></div>`));
-      gridA.appendChild(html(`<div class="card"><h3>Cevap süreleri</h3><p>Ortalama: ${formatDuration(agg.meanReply)}</p><p>Medyan: ${formatDuration(agg.medianReply)}</p><div><small>0-30sn → 10-12saat histogram</small><canvas data-type="hist"></canvas></div><div><h4>En uzun bekleyişler</h4><ul class="list">${agg.outliers.map(o=>`<li>${dayKey(o.start)} → ${dayKey(o.end)} (${formatDuration(o.raw)}): ${o.prev?.slice(0,80)||''}</li>`).join('')}</ul></div></div>`));
-      gridA.appendChild(html(`<div class="card"><h3>En uzun mesajlar</h3><div class="flex"><div><h4>Murat</h4>${agg.longest['Murat Kar'].map(m=>`<div class="list-item"><strong>${m.chars} karakter</strong><p>${escapeHtml(m.text)}</p></div>`).join('')}</div><div><h4>Rümeysa</h4>${agg.longest['Rümeysa Akbulut'].map(m=>`<div class="list-item"><strong>${m.chars} karakter</strong><p>${escapeHtml(m.text)}</p></div>`).join('')}</div></div></div>`));
-      contentEl.appendChild(pageA);
+      const trafficInsights = [
+        `En yoğun gün: ${agg.busiest[0]?`${agg.busiest[0].key} (${agg.busiest[0].count})`:''}`,
+        `Haftalık ortalama: ${Math.round(total/Math.max(agg.daily.size,1))} mesaj/gün`,
+        `Ay ortalaması: ${Math.round(total/Math.max(agg.monthly.size,1))} mesaj/ay`
+      ];
+      pages.push({id:'page-3',html:`
+        <section class="page" id="tempo">
+          <div class="page-header"><div><div class="pill">Sayfa 3</div><h2 class="page-title">Tempo</h2><p class="page-sub">Günlük mesaj trafiği</p></div></div>
+          <div class="chart-box avoid-break"><canvas data-type="line"></canvas></div>
+          <ul class="list" style="margin-top:12px;">
+            ${trafficInsights.map(t=>`<li>${t}</li>`).join('')}
+          </ul>
+        </section>`});
 
-      // Media & calls page
-      contentEl.appendChild(html(`<div class="page"><h2>Medya & Aramalar</h2><div class="grid">
-        <div class="card"><h3>Medya</h3><ul class="list"><li>Fotoğraf: ${agg.mediaCounts.photo||0}</li><li>Video: ${agg.mediaCounts.video||0}</li><li>Ses: ${agg.mediaCounts.audio||0}</li><li>Sticker: ${agg.mediaCounts.sticker||0}</li></ul></div>
-        <div class="card"><h3>Yanıtlanmış aramalar</h3><p>Sesli: ${agg.callCounts.voice} / ${formatDuration(agg.callDurations.voice)}</p><p>Görüntülü: ${agg.callCounts.video} / ${formatDuration(agg.callDurations.video)}</p></div>
-        <div class="card"><h3>Kaçırılan aramalar</h3><p>Sesli kaçırıldı: ${agg.callCounts.missedVoice}</p><p>Görüntülü kaçırıldı: ${agg.callCounts.missedVideo}</p><p>Murat başlattı: ${agg.missedBySender['Murat Kar']||0}</p><p>Rümeysa başlattı: ${agg.missedBySender['Rümeysa Akbulut']||0}</p></div>
-        <div class="card"><h3>Sticker grupları</h3><ul class="list">${agg.stickerGroups.map(g=>`<li><div class="flex"><strong>${g.label||g.key}</strong><input class="sticker-label" data-key="${g.key}" placeholder="Etiket" value="${g.label||''}"></div><small>${g.count} kullanım</small><div>${g.samples.map(s=>dayKey(s.ts)+' '+s.sender).join('<br>')}</div></li>`).join('')}</ul></div>
-      </div></div>`));
+      const topMonths = Array.from(agg.monthly.entries()).sort((a,b)=>b[1]-a[1]).slice(0,3);
+      pages.push({id:'page-4',html:`
+        <section class="page" id="months">
+          <div class="page-header"><div><div class="pill">Sayfa 4</div><h2 class="page-title">Aylara Göre</h2><p class="page-sub">12 aylık ritim</p></div></div>
+          <div class="chart-box avoid-break"><canvas data-type="month"></canvas></div>
+          <div class="two-col" style="margin-top:12px;">
+            <div class="card"><h3>En yoğun aylar</h3><ul class="list">${topMonths.map(m=>`<li>${m[0]} — ${m[1]}</li>`).join('')}</ul></div>
+            <div class="card"><h3>Yıllık toplam</h3><div class="kpi">${total}</div><div class="muted">mesaj</div></div>
+          </div>
+        </section>`});
 
-      // Content analyses page
-      const wcHtml = agg.wordCloud.map(w=>`<span style="font-size:${12+Math.min(w.count*2,42)}px">${escapeHtml(w.word)} (${w.count})</span>`).join('');
-      contentEl.appendChild(html(`<div class="page"><h2>B) İçerik Analizleri</h2><div class="grid">
-        <div class="card"><h3>Kelime bulutu</h3><div class="word-cloud">${wcHtml}</div></div>
-        <div class="card"><h3>Emojiler</h3><ul class="list">${agg.emojiTop.map(e=>`<li>${e[0]} — ${e[1]}</li>`).join('')}</ul></div>
-        <div class="card"><h3>Kategoriler</h3><ul class="list">${Object.entries(agg.topicCounts).map(([k,v])=>`<li>${k}: ${v}</li>`).join('')}</ul></div>
-        <div class="card"><h3>Örnek temalar</h3><ul class="list">${Object.entries(agg.topicSamples).map(([k,v])=>`<li><strong>${k}</strong><br>Murat: ${v.m?escapeHtml(v.m.rawText.slice(0,120)):'-'}<br>Rümeysa: ${v.r?escapeHtml(v.r.rawText.slice(0,120)):'-'}</li>`).join('')}</ul></div>
-        <div class="card"><h3>Bu yılın 12 teması</h3><ul class="list">${agg.topNgrams.map(n=>`<li>${n[0]} (${n[1]})</li>`).join('')}</ul></div>
-      </div></div>`));
+      const peakHour = agg.hourly.indexOf(Math.max(...agg.hourly));
+      const lowHour = agg.hourly.indexOf(Math.min(...agg.hourly));
+      pages.push({id:'page-5',html:`
+        <section class="page" id="hours">
+          <div class="page-header"><div><div class="pill">Sayfa 5</div><h2 class="page-title">Saatler</h2><p class="page-sub">Günün hangi saatlerinde?</p></div></div>
+          <div class="chart-box avoid-break"><canvas data-type="hours"></canvas></div>
+          <div class="two-col" style="margin-top:12px;">
+            <div class="card"><h3>Zirve saat</h3><div class="kpi">${peakHour}:00</div><div class="muted">En yoğun dilim</div></div>
+            <div class="card"><h3>En sakin saat</h3><div class="kpi">${lowHour}:00</div><div class="muted">Neredeyse sessizlik</div></div>
+          </div>
+        </section>`});
 
-      // Fun page
-      contentEl.appendChild(html(`<div class="page"><h2>C) Eğlenceli & Romantik</h2><div class="grid">
-        <div class="card"><h3>En çok gülünen mesajlar</h3><ul class="list">${agg.laughRanking.map(l=>`<li><strong>${escapeHtml(l.msg.rawText.slice(0,140))}</strong><br><small>${l.count} tepki</small><div>${l.laughs.slice(0,3).map(t=>escapeHtml(t)).join('<br>')}</div></li>`).join('')}</ul></div>
-        <div class="card"><h3>Romantik anlar</h3><ul class="list">${agg.romanceMessages.map(m=>`<li>${escapeHtml(m.rawText)}</li>`).join('')}</ul></div>
-      </div></div>`));
+      const weekNames=['Pzt','Sal','Çar','Per','Cum','Cts','Paz'];
+      const peakDayIdx = agg.weekDay.indexOf(Math.max(...agg.weekDay));
+      const calmDayIdx = agg.weekDay.indexOf(Math.min(...agg.weekDay));
+      pages.push({id:'page-6',html:`
+        <section class="page" id="weekdays">
+          <div class="page-header"><div><div class="pill">Sayfa 6</div><h2 class="page-title">Günler</h2><p class="page-sub">Haftanın ritmi</p></div></div>
+          <div class="chart-box avoid-break"><canvas data-type="week"></canvas></div>
+          <div class="two-col" style="margin-top:12px;">
+            <div class="card"><h3>En hareketli gün</h3><div class="kpi">${weekNames[peakDayIdx]}</div><div class="muted">Haftanın yıldızı</div></div>
+            <div class="card"><h3>En sakin gün</h3><div class="kpi">${weekNames[calmDayIdx]}</div><div class="muted">Dinlenme modu</div></div>
+          </div>
+        </section>`});
 
-      // Datei and overlay page
-      contentEl.appendChild(html(`<div class="page"><h2>Konuştuğumuz date'ler</h2><div class="grid">
-        <div class="card"><h3>Toplam</h3><p>${agg.dateMentions.length} kez</p><h4>Kategoriler</h4><ul class="list">${Array.from(agg.dateCats.entries()).map(([k,v])=>`<li>${k}: ${v}</li>`).join('')}</ul></div>
-        <div class="card"><h3>Haftalık yoğunluk</h3><canvas data-type="dateweek"></canvas></div>
-        <div class="card"><h3>Örnek satırlar</h3><ul class="list">${agg.dateMentions.slice(-10).map(m=>`<li>${escapeHtml(m.rawText)}</li>`).join('')}</ul></div>
-        <div class="card"><h3>Büyük final overlay</h3><canvas data-type="overlay"></canvas></div>
-      </div></div>`));
+      const fastestPct = Math.round((agg.hist[0]+agg.hist[1])/Math.max(agg.replyIntervals.length,1)*100);
+      const slowestPct = Math.round((agg.hist[6]+agg.hist[7])/Math.max(agg.replyIntervals.length,1)*100);
+      const topOutliers = agg.outliers.slice(0,5);
+      pages.push({id:'page-7',html:`
+        <section class="page" id="reply">
+          <div class="page-header"><div><div class="pill">Sayfa 7</div><h2 class="page-title">Yanıt Süresi</h2><p class="page-sub">12 saat tavanlı histogram</p></div></div>
+          <div class="chart-box avoid-break"><canvas data-type="hist"></canvas></div>
+          <div class="grid" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 4;"><h3>Ortalama</h3><div class="kpi">${formatDuration(agg.meanReply)}</div></div>
+            <div class="card" style="grid-column: span 4;"><h3>Medyan</h3><div class="kpi">${formatDuration(agg.medianReply)}</div></div>
+            <div class="card" style="grid-column: span 4;"><h3>En hızlı dilim</h3><div class="kpi">${fastestPct}%</div><div class="muted">ilk 1 dak.</div></div>
+            <div class="card" style="grid-column: span 4;"><h3>En yavaş dilim</h3><div class="kpi">${slowestPct}%</div><div class="muted">3s-12s</div></div>
+            <div class="card avoid-break" style="grid-column: span 8;"><h3>Top 5 en uzun bekleyiş</h3><ul class="list">${topOutliers.map((o,i)=>`<li class="${i>=5?'print-trim extra':''}">${dayKey(o.start)} → ${dayKey(o.end)} (${formatDuration(o.raw)}) — ${truncate(escapeHtml(o.prev||''),160)}</li>`).join('')}</ul></div>
+          </div>
+        </section>`});
 
-      // Back cover
-      contentEl.appendChild(html(`<div class="backcover"><h2>Birlikte nice güzel sohbetlere</h2><p>Bu sayfa yerel olarak üretildi. Yazdırıp PDF olarak saklayın.</p></div>`));
+      const streakTop = agg.streaks.slice().sort((a,b)=>b.len-a.len||a.start-b.start).slice(0,5);
+      const breakTop = agg.streakBreaks.slice(0,5);
+      pages.push({id:'page-8',html:`
+        <section class="page" id="streaks">
+          <div class="page-header"><div><div class="pill">Sayfa 8</div><h2 class="page-title">Streakler</h2><p class="page-sub">Birlikte yazılan günler</p></div></div>
+          <div class="card avoid-break" style="margin-bottom:12px;">
+            <h3>En uzun streak</h3>
+            <div class="kpi">${agg.longestStreak.len||0} gün</div>
+            <div class="muted">${agg.longestStreak.start?`${dayKey(agg.longestStreak.start)} → ${dayKey(agg.longestStreak.end)}`:''}</div>
+          </div>
+          <div class="two-col">
+            <div class="card"><h3>Top 5 streak</h3><ul class="list">${streakTop.map((s,i)=>`<li class="${i>=5?'print-trim extra':''}">${dayKey(s.start)} → ${dayKey(s.end)} (${s.len} gün)</li>`).join('')}</ul></div>
+            <div class="card"><h3>Streak kırılma günleri</h3><ul class="list">${breakTop.map((b,i)=>`<li class="${i>=5?'print-trim extra':''}">${dayKey(b.date)} (önce ${b.len}g)</li>`).join('')}</ul></div>
+          </div>
+        </section>`});
 
-      // hydrate sticker inputs
+      pages.push({id:'page-9',html:`
+        <section class="page" id="busycalm">
+          <div class="page-header"><div><div class="pill">Sayfa 9</div><h2 class="page-title">En Yoğun / En Sakin Günler</h2><p class="page-sub">Göz açıp kapayınca</p></div></div>
+          <div class="two-col">
+            <div class="card"><h3>En yoğun 7 gün</h3><ul class="list">${agg.busiest.slice(0,7).map(d=>`<li>${d.key} — ${d.count}</li>`).join('')}</ul><p class="note">Not:</p></div>
+            <div class="card"><h3>En sakin 7 gün</h3><ul class="list">${agg.calmest.slice(0,7).map(d=>`<li>${d.key} — ${d.count}</li>`).join('')}</ul><p class="note">Not:</p></div>
+          </div>
+        </section>`});
+
+      const topWords = agg.wordCloud.slice(0,10);
+      pages.push({id:'page-10',html:`
+        <section class="page" id="wordcloud">
+          <div class="page-header"><div><div class="pill">Sayfa 10</div><h2 class="page-title">Kelime Bulutu</h2><p class="page-sub">En çok konuşulan kelimeler</p></div></div>
+          <div class="card avoid-break" style="min-height:220px;">
+            <div class="word-cloud">${agg.wordCloud.map(w=>`<span style="font-size:${12+Math.min(w.count*2,42)}px">${escapeHtml(w.word)} (${w.count})</span>`).join('')}</div>
+          </div>
+          <div class="two-col" style="margin-top:12px;">
+            <div class="card"><h3>Top 10 kelime</h3><ul class="list two-col-list">${topWords.map((w,i)=>`<li class="${i>=7?'print-trim extra':''}">${w.word} — ${w.count}</li>`).join('')}</ul></div>
+            <div class="card"><h3>Kısa not</h3><p class="muted">Daha fazla kelime ekran görünümünde görülebilir.</p></div>
+          </div>
+        </section>`});
+
+      pages.push({id:'page-11',html:`
+        <section class="page" id="emoji">
+          <div class="page-header"><div><div class="pill">Sayfa 11</div><h2 class="page-title">Emojiler</h2><p class="page-sub">Top 10 ifade</p></div></div>
+          <div class="emoji-list">
+            ${agg.emojiTop.map((e,i)=>`<div class="card emoji-item ${i>=7?'print-trim extra':''}"><div>${e[0]}</div><div class="muted">${e[1]} kez</div></div>`).join('')}
+          </div>
+        </section>`});
+
+      const topicEntries = Object.entries(agg.topicCounts).sort((a,b)=>b[1]-a[1]);
+      pages.push({id:'page-12',html:`
+        <section class="page" id="topics">
+          <div class="page-header"><div><div class="pill">Sayfa 12</div><h2 class="page-title">Temalar</h2><p class="page-sub">10–12 kategori</p></div></div>
+          <div class="grid">
+            ${topicEntries.map(([k,v],i)=>`<div class="card ${i>=12?'print-trim extra':''}" style="grid-column: span 4;"><h3>${k}</h3><div class="kpi">${v}</div><p class="muted">mesaj</p><div class="note">Murat: ${agg.topicSamples[k].m?truncate(escapeHtml(agg.topicSamples[k].m.rawText),160):'-'}</div><div class="note">Rümeysa: ${agg.topicSamples[k].r?truncate(escapeHtml(agg.topicSamples[k].r.rawText),160):'-'}</div></div>`).join('')}
+          </div>
+        </section>`});
+
+      pages.push({id:'page-13',html:`
+        <section class="page" id="bonus">
+          <div class="page-header"><div><div class="pill">Sayfa 13</div><h2 class="page-title">Bu yılın en çok konuşulan 12 teması</h2><p class="page-sub">N-gram listesi</p></div></div>
+          <div class="card avoid-break">
+            <ul class="list">${agg.topNgrams.map((n,i)=>`<li class="${i>=7?'print-trim extra':''}">${n[0]} — ${n[1]}</li>`).join('')}</ul>
+          </div>
+        </section>`});
+
+      const laughTop = agg.laughRanking.slice(0,8);
+      pages.push({id:'page-14',html:`
+        <section class="page" id="laughter">
+          <div class="page-header"><div><div class="pill">Sayfa 14</div><h2 class="page-title">Kahkaha</h2><p class="page-sub">En çok gülünen mesajlar</p></div></div>
+          <div class="grid">
+            ${laughTop.map((l,i)=>`<div class="card ${i>=8?'print-trim extra':''}" style="grid-column: span 6;">
+              <h3>${i+1}. ${l.count} kahkaha</h3>
+              <p>${truncate(escapeHtml(l.msg.rawText),220)}</p>
+              <p class="note">${l.laughs.slice(0,2).map(x=>truncate(escapeHtml(x),80)).join('<br>')}</p>
+            </div>`).join('')}
+          </div>
+          <details class="no-print" style="margin-top:12px;">
+            <summary>Tüm 20 satırı göster</summary>
+            <div class="grid">${agg.laughRanking.map((l,i)=>`<div class="card" style="grid-column: span 6;"><h4>${i+1}. ${l.count} kahkaha</h4><p>${escapeHtml(l.msg.rawText)}</p></div>`).join('')}</div>
+          </details>
+        </section>`});
+
+      const romanceTop = agg.romanceMessages.slice(0,6);
+      pages.push({id:'page-15',html:`
+        <section class="page" id="romance">
+          <div class="page-header"><div><div class="pill">Sayfa 15</div><h2 class="page-title">Romantizm</h2><p class="page-sub">En tatlı 10 an (baskıda 6)</p></div></div>
+          <div class="grid">
+            ${romanceTop.map((m,i)=>`<div class="card" style="grid-column: span 6;"><h3>${i+1}. An</h3><p>${truncate(escapeHtml(m.rawText),240)}</p><div class="muted">${dayKey(m.ts)}</div></div>`).join('')}
+          </div>
+          <details class="no-print" style="margin-top:12px;">
+            <summary>Tüm 10 anı göster</summary>
+            <ul class="list">${agg.romanceMessages.map(m=>`<li>${escapeHtml(m.rawText)}</li>`).join('')}</ul>
+          </details>
+        </section>`});
+
+      pages.push({id:'page-16',html:`
+        <section class="page" id="calls">
+          <div class="page-header"><div><div class="pill">Sayfa 16</div><h2 class="page-title">Çağrılar & Medya</h2><p class="page-sub">Temiz kartlar</p></div></div>
+          <div class="two-col">
+            <div class="card">
+              <h3>Medya toplam</h3>
+              <ul class="list">
+                <li>Fotoğraf: ${agg.mediaCounts.photo||0}</li>
+                <li>Video: ${agg.mediaCounts.video||0}</li>
+                <li>Ses: ${agg.mediaCounts.audio||0}</li>
+                <li>Sticker: ${agg.mediaCounts.sticker||0}</li>
+              </ul>
+            </div>
+            <div class="card">
+              <h3>Çağrılar</h3>
+              <p>Sesli: ${agg.callCounts.voice} / ${formatDuration(agg.callDurations.voice)}</p>
+              <p>Görüntülü: ${agg.callCounts.video} / ${formatDuration(agg.callDurations.video)}</p>
+              <p>Kaçırılan: ${agg.callCounts.missedVoice+agg.callCounts.missedVideo}</p>
+              <p class="muted">Murat başlattı: ${agg.missedBySender?.['Murat Kar']||0}</p>
+              <p class="muted">Rümeysa başlattı: ${agg.missedBySender?.['Rümeysa Akbulut']||0}</p>
+            </div>
+          </div>
+        </section>`});
+
+      const dateCatsSorted = Array.from(agg.dateCats.entries()).sort((a,b)=>b[1]-a[1]).slice(0,8);
+      pages.push({id:'page-17',html:`
+        <section class="page" id="datei">
+          <div class="page-header"><div><div class="pill">Sayfa 17</div><h2 class="page-title">Date’i</h2><p class="page-sub">Konuştuğumuz date’ler</p></div></div>
+          <div class="grid">
+            <div class="card" style="grid-column: span 5;"><h3>Toplam</h3><div class="kpi">${agg.dateMentions.length}</div><div class="muted">adet geçiş</div><h4>İlk 8 kategori</h4><ul class="list">${dateCatsSorted.map((c,i)=>`<li class="${i>=7?'print-trim extra':''}">${c[0]} — ${c[1]}</li>`).join('')}</ul></div>
+            <div class="card avoid-break" style="grid-column: span 7;"><h3>Haftalık yoğunluk</h3><canvas data-type="dateweek"></canvas></div>
+          </div>
+        </section>`});
+
+      pages.push({id:'page-18',html:`
+        <section class="page" id="overlay">
+          <div class="page-header"><div><div class="pill">Sayfa 18</div><h2 class="page-title">Büyük Final Overlay</h2><p class="page-sub">Haftalık normalizasyon (0–100)</p></div></div>
+          <div class="chart-box avoid-break"><canvas data-type="overlay"></canvas></div>
+          <ul class="list" style="margin-top:12px;">
+            <li>Trafik, kahkaha, romantizm ve date’i yoğunluğu aynı eksende.</li>
+            <li>Renkler: mesaj (#6366f1), kahkaha (#f97316), romantizm (#ec4899), date’i (#22c55e).</li>
+          </ul>
+        </section>`});
+
+      const savedClosing = localStorage.getItem('closing_note')||'Bu yılı nasıl kapatmak istersin? Buraya son sözünü yaz.';
+      pages.push({id:'page-19',html:`
+        <section class="page" id="closing">
+          <div class="page-header"><div><div class="pill">Sayfa 19</div><h2 class="page-title">Son Söz</h2><p class="page-sub">Ekranda düzenle, baskıda sabit</p></div></div>
+          <textarea class="closing-input no-print" id="closingInput">${savedClosing}</textarea>
+          <div class="card" style="margin-top:12px;"><h3>Yazdırılacak metin</h3><p id="closingPreview">${escapeHtml(savedClosing)}</p></div>
+        </section>`});
+
+      pages.push({id:'page-20',html:`
+        <section class="page" id="back" style="display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;">
+          <div class="pill">Sayfa 20</div>
+          <h2 class="page-title">Arşive hazır</h2>
+          <p class="muted">Yerelde üretildi. PDF olarak saklayın.</p>
+        </section>`});
+
+      pages.forEach(p=>{
+        contentEl.insertAdjacentHTML('beforeend', p.html);
+        const navLabel = `S${p.id.split('-')[1]}`;
+        navEl.insertAdjacentHTML('beforeend', `<a href="#${p.id}">${navLabel}</a>`);
+      });
+
+      document.querySelector('#closingInput')?.addEventListener('input',(e)=>{
+        localStorage.setItem('closing_note', e.target.value);
+        const target=document.getElementById('closingPreview');
+        if(target) target.textContent = e.target.value;
+      });
+
       document.querySelectorAll('.sticker-label').forEach(inp=>{
         inp.addEventListener('change',()=>{ localStorage.setItem('label_'+inp.dataset.key, inp.value); });
       });
 
-      // draw charts
       document.querySelectorAll('canvas').forEach(cv=>{
         const type=cv.dataset.type;
-        if(type==='hist') drawHistogram(cv, agg.hist);
+        if(type==='line') drawLineChart(cv, agg.daily);
+        else if(type==='month') drawBarChartMonth(cv, agg.monthly);
+        else if(type==='hours') drawBarChartHours(cv, agg.hourly);
+        else if(type==='week') drawBarChartWeekdays(cv, agg.weekDay);
+        else if(type==='hist') drawHistogram(cv, agg.hist);
         else if(type==='dateweek') drawMapChart(cv, agg.dateWeek);
         else if(type==='overlay') drawOverlay(cv, agg.weeklyOverlay);
       });
@@ -666,7 +844,7 @@
       const ctx = setupCanvas(canvas);
       const entries = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
       const vals = entries.map(e=>e[1]); const max=Math.max(...vals,1);
-      ctx.strokeStyle='#b14aed'; ctx.beginPath();
+      ctx.strokeStyle='#b14aed'; ctx.lineWidth=2; ctx.beginPath();
       entries.forEach((e,i)=>{ const x=i/(entries.length-1||1)*canvas.width; const y=canvas.height - (e[1]/max)*(canvas.height-20) -10; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
       ctx.stroke();
     }

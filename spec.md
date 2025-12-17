@@ -67,3 +67,11 @@ Dahil edilenler: text + tüm medya + çağrılar. Sistem ve silinen mesajlar tü
 - Haftalık normalleştirilmiş (0–100) dört seri: mesaj trafiği, kahkaha skoru, romantizm, date’i yoğunluğu (yoksa 0).
 - Tek canvas üzerinde renkli çizgi grafiği.
 
+## Print layout kuralları
+- Her sayfa `.page` sınıfı ile A4 dikey (210mm genişlik, min 297mm yükseklik) ve 18–22mm iç boşluk kullanır.
+- `.page { page-break-after: always; break-after: page; }` ile her bölüm tek sayfadır; `.avoid-break` kartları sayfa içinde bölünmez.
+- Yazdırmada kontroller ve etkileşimli elemanlar `display:none` olur (`.no-print`). Arka plan grafiklerinin yazdırılması için kullanıcıya yönerge verilir.
+- Tablolar baskıda en fazla 7 satır gösterir; fazlası `print-trim` sınıfı ile gizlenir ve yalnızca ekranda açılır.
+- Metin kartları baskıda kısaltılır (220–240 karakter), tema örnekleri 160 karaktere kesilir.
+- Grafikler yazdırma öncesi canvastan görsele dönüştürülür ve yazdırma 500ms gecikmeli tetiklenir.
+
