@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WhatsApp 2025 Wrapped</title>
+  <style>
+    :root {
+      --bg: #f7f2f9;
+      --text: #1f1a2e;
+      --accent: #b14aed;
+      --muted: #6c6780;
+      --card: #ffffff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 0;
+    }
+    h1,h2,h3,h4 { margin: 0 0 8px; color: var(--text); }
+    p { margin: 4px 0; }
+    .controls {
+      position: sticky;
+      top: 0;
+      background: rgba(247,242,249,0.95);
+      backdrop-filter: blur(8px);
+      padding: 12px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      z-index: 10;
+      border-bottom: 1px solid #e0d7eb;
+    }
+    .controls label { font-weight: 600; color: var(--muted); font-size: 14px; display:block; margin-bottom:4px; }
+    .controls input[type=file] { padding: 6px; background: #fff; border: 1px solid #d3c7e6; border-radius: 8px; }
+    .controls button {
+      background: var(--accent);
+      border: none;
+      color: white;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 8px 18px rgba(177,74,237,0.3);
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+      page-break-inside: avoid;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 10px;
+      background: #efe9f8;
+      border-radius: 999px;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 13px;
+    }
+    canvas { width: 100%; height: 260px; display: block; }
+    .section-title { font-size: 20px; margin: 24px 0 12px; }
+    .cover, .backcover {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+      background: linear-gradient(135deg, #ffe3f3, #e6e9ff);
+      color: #1a1035;
+      page-break-after: always;
+    }
+    .page { padding: 24px 32px; page-break-after: always; }
+    .page:last-child { page-break-after: auto; }
+    .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    .list li { padding: 10px 12px; background: #f6f1fb; border-radius: 12px; }
+    .tag { background: #f0e9ff; color: #5d3fd3; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .word-cloud span { display: inline-block; margin: 6px; }
+    .flex { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+    .debug {
+      position: fixed; right: 12px; bottom: 12px;
+      width: 320px;
+      max-height: 70vh;
+      overflow: auto;
+      background: rgba(18,16,34,0.9);
+      color: #e5defc;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    }
+    .hidden { display: none; }
+    @media print {
+      .controls, .debug, .sticker-label { display: none !important; }
+      body { background: white; }
+      .page { padding: 12mm; }
+      canvas { height: 200px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="controls">
+    <div>
+      <label>WhatsApp .txt yükle</label>
+      <input type="file" id="fileInput" accept="text/plain">
+    </div>
+    <div>
+      <label>Medya klasörü seç (opsiyonel)</label>
+      <input type="file" id="mediaInput" webkitdirectory directory multiple>
+    </div>
+    <div class="flex">
+      <button id="analyzeBtn">Analiz Et</button>
+      <span class="pill">İpucu: Dosyayı seç, medya klasörü seç (varsa), sonra yazdır!</span>
+    </div>
+  </div>
+  <div id="content"></div>
+  <div id="debug" class="debug hidden"></div>
+  <script>
+    const TURKISH_STOP = new Set(['ve','veya','ile','ama','fakat','lakin','de','da','ki','bu','su','şu','o','bir','bi','ne','mi','mı','mu','mü','için','gibi','çünkü','ya','sen','ben','biz','siz','onlar','şimdi','daha','çok','az','her','en','ile','ya','yao','diye','di','değil','vardı','böyle','hala','hem','hep','hepimiz','yani','ise','yada','veya','veya','şey','aslında','muhtemelen','mı','mi','mu','mü','şu','falan','filan','bugün','yarın','akşam','sabah','öğlen','sonra','önce']);
+    const ROMANTIC = ['aşkım','canım','bebeğim','tatlım','seviyorum','seni seviyorum','özledim','sevgilim','kalbim','hayatım','prenses','prensim','balım','güzelim','yavrum','çekim'];
+    const DATEI_TOKENS = ['datei','date\'i','date i','date’i','date i'];
+    const TOPIC_CATS = {
+      'İş & okul': ['iş','ofis','mesai','sınav','okul','ders','ödev','proje','toplantı'],
+      'Yemek & kahve': ['kahve','yemek','restoran','kahvaltı','akşam yemeği','çay','pizza','burger','tatlı'],
+      'Ulaşım & yol': ['metro','otobüs','uçak','uçuş','havaalanı','trafik','yol','taksi','uber'],
+      'Seyahat & tatil': ['otel','tatil','rezervasyon','uçuş','bilet','uçak','gezi','gezmek','tatilde'],
+      'Aile & arkadaş': ['annem','babam','kardeşim','arkadaş','dost','kuzen','ailem','düğün'],
+      'Sağlık & spor': ['spor','koşu','yürüyüş','fitness','sağlık','ilaç','hastane','ağrı','yoga'],
+      'Eğlence & film': ['film','dizi','netflix','sinema','oyun','oynadım','fragman','konser'],
+      'Teknoloji': ['telefon','bilgisayar','uygulama','kod','api','internet','şarj','kulaklık'],
+      'Para & alışveriş': ['alışveriş','fiyat','indirim','para','maaş','ödeme','kart','market','fatura'],
+      'Hava & gün': ['hava','yağmur','güneş','soğuk','sıcak','mevsim','bahar','kış','yaz'],
+      'Duygu & motivasyon': ['mutlu','üzgün','mutsuz','sinir','heyecan','motive','enerji','yorgun'],
+      'Plan & etkinlik': ['plan','buluşma','event','etkinlik','parti','doğum günü','kutlama']
+    };
+
+    const laughRegex = /(?:😂|🤣|haha|ahah|kdkd|sjsj|xdd|:p)/i;
+    const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
+
+    const contentEl = document.getElementById('content');
+    const debugEl = document.getElementById('debug');
+
+    document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
+
+    let mediaFiles = [];
+
+    document.getElementById('mediaInput').addEventListener('change', (e)=>{
+      mediaFiles = Array.from(e.target.files || []);
+    });
+
+    async function handleAnalyze(){
+      const file = document.getElementById('fileInput').files[0];
+      if(!file){ alert('Lütfen sohbet .txt dosyasını seçin'); return; }
+      const text = await file.text();
+      const parsed = parseChat(text);
+      const stickerIndex = await buildStickerIndex(mediaFiles);
+      const aggregates = computeAnalytics(parsed.messages, parsed.range, stickerIndex);
+      renderAll(parsed, aggregates);
+      renderDebug(parsed, aggregates);
+    }
+
+    function parseChat(text){
+      const lines = text.split(/\r?\n/);
+      const msgPattern = /^\[(\d{1,2})\.(\d{1,2})\.(\d{4}) (\d{2}):(\d{2}):(\d{2})\] ([^:]+): (.*)$/;
+      const messages=[]; let parseErrors=0; let current=null; let range={min:null,max:null};
+      const pushCurrent=()=>{ if(!current) return; const kind = classify(current.rawText); current.kind=kind; if(kind==='system'||kind==='deleted'){ current=null; return;} current.cleanText = stripUrls(current.rawText); messages.push(current); if(!range.min||current.ts<range.min) range.min=current.ts; if(!range.max||current.ts>range.max) range.max=current.ts; current=null; };
+      for(const line of lines){
+        const m = line.match(msgPattern);
+        if(m){
+          pushCurrent();
+          const [_,d,mo,y,hh,mm,ss,name,rest] = m;
+          const ts = new Date(Number(y), Number(mo)-1, Number(d), Number(hh), Number(mm), Number(ss));
+          current = {ts, sender:name.trim(), rawText:rest};
+        } else {
+          if(current){ current.rawText += "\n"+line; }
+          else { parseErrors++; }
+        }
+      }
+      pushCurrent();
+      return {messages, parseErrors, lines:lines.length, range};
+    }
+
+    function classify(text){
+      if(!text) return 'text';
+      if(/Bu mesaj silindi/i.test(text)) return 'deleted';
+      if(/gruba eklendi|gruptan çıkarıldı|uçtan uca|şifrelenmiştir|grup bilgisi|mesajlar ve aramalar/i.test(text)) return 'system';
+      if(/<[^>]*-PHOTO-[^>]*>/i.test(text)) return 'photo';
+      if(/<[^>]*-VIDEO-[^>]*>/i.test(text)) return 'video';
+      if(/<[^>]*-AUDIO-[^>]*>/i.test(text)) return 'audio';
+      if(/<[^>]*-STICKER-[^>]*>/i.test(text)) return 'sticker';
+      if(/Görüntülü arama\. .*Cevaplanmadı/i.test(text)) return 'call_video_missed';
+      if(/Sesli arama\. .*Cevaplanmadı/i.test(text)) return 'call_voice_missed';
+      if(/Görüntülü arama\./i.test(text) && /saat|dk|sn\./i.test(text)) return 'call_video_answered';
+      if(/Sesli arama\./i.test(text) && /saat|dk|sn\./i.test(text)) return 'call_voice_answered';
+      return 'text';
+    }
+
+    function stripUrls(t){
+      return (t||'').replace(urlRegex,'').trim();
+    }
+
+    function dayKey(ts){ return `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}-${String(ts.getDate()).padStart(2,'0')}`; }
+    function monthKey(ts){ return `${ts.getFullYear()}-${String(ts.getMonth()+1).padStart(2,'0')}`; }
+    function hourOfDay(ts){ return ts.getHours(); }
+    function weekday(ts){ return (ts.getDay()+6)%7; } // Monday=0
+
+    function weekKey(ts){
+      const d = new Date(ts.getFullYear(), ts.getMonth(), ts.getDate());
+      const day = (d.getDay()+6)%7;
+      d.setDate(d.getDate()-day+3);
+      const firstThursday = new Date(d.getFullYear(),0,4);
+      const diff = d - firstThursday;
+      const week = 1 + Math.round(diff/ (7*24*3600*1000));
+      return { key: `${d.getFullYear()}-W${String(week).padStart(2,'0')}`, week };
+    }
+
+    function bucketRange(range){
+      const days=[];
+      if(!range.min||!range.max) return days;
+      const d = new Date(range.min.getFullYear(), range.min.getMonth(), range.min.getDate());
+      const end = new Date(range.max.getFullYear(), range.max.getMonth(), range.max.getDate());
+      while(d<=end){ days.push(new Date(d)); d.setDate(d.getDate()+1);} return days;
+    }
+
+    function tokenize(text){
+      const clean = stripDiacritics(text.toLowerCase());
+      return clean.replace(/[^a-zçğıöşü0-9\s]/gi,' ').split(/\s+/).filter(Boolean).filter(w=>!TURKISH_STOP.has(w));
+    }
+
+    function stripDiacritics(str){
+      const map = {'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u'};
+      return str.replace(/[çğıöşü]/g,m=>map[m]).replace(/[ÇĞİÖŞÜ]/g,m=>map[m.toLowerCase()]);
+    }
+
+    function computeAnalytics(messages, range, stickerIndex){
+      const included = messages.filter(m=>m.kind!=='system'&&m.kind!=='deleted');
+      const textMessages = included.filter(m=>m.kind==='text');
+      const countsBySender = {'Murat Kar':0,'Rümeysa Akbulut':0};
+      const kindsCount = {};
+      const daily = new Map();
+      const monthly = new Map();
+      const hourly = new Array(24).fill(0);
+      const weekDay = new Array(7).fill(0);
+      const longest = {'Murat Kar':[], 'Rümeysa Akbulut':[]};
+      const replyIntervals=[]; const replyIntervalsRaw=[]; const replyDetails=[];
+      const daySet = bucketRange(range);
+      daySet.forEach(d=>daily.set(dayKey(d),0));
+      const callDurations={voice:0,video:0};
+      const callCounts={voice:0,video:0,missedVoice:0,missedVideo:0};
+      const missedBySender={'Murat Kar':0,'Rümeysa Akbulut':0};
+      const mediaCounts={photo:0,video:0,audio:0,sticker:0};
+
+      for(const m of included){
+        countsBySender[m.sender]=(countsBySender[m.sender]||0)+1;
+        kindsCount[m.kind]=(kindsCount[m.kind]||0)+1;
+        const dk = dayKey(m.ts); daily.set(dk,(daily.get(dk)||0)+1);
+        const mk = monthKey(m.ts); monthly.set(mk,(monthly.get(mk)||0)+1);
+        hourly[hourOfDay(m.ts)]++;
+        weekDay[weekday(m.ts)]++;
+        if(m.kind==='text'){
+          const lengthChars = stripUrls(m.rawText).length;
+          const lengthWords = tokenize(m.rawText).length;
+          longest[m.sender].push({text:m.rawText, chars:lengthChars, words:lengthWords, ts:m.ts});
+        }
+        if(m.kind.startsWith('call')){
+          if(m.kind==='call_voice_answered'){ callCounts.voice++; callDurations.voice+=parseDuration(m.rawText); }
+          if(m.kind==='call_video_answered'){ callCounts.video++; callDurations.video+=parseDuration(m.rawText); }
+          if(m.kind==='call_voice_missed'){ callCounts.missedVoice++; missedBySender[m.sender]++; }
+          if(m.kind==='call_video_missed'){ callCounts.missedVideo++; missedBySender[m.sender]++; }
+        }
+        if(mediaCounts[m.kind]!==undefined) mediaCounts[m.kind]++;
+      }
+
+      // reply times (run based)
+      let lastSender=null; let lastRunStart=null; let lastMsg=null;
+      for(const m of included){
+        if(m.sender!==lastSender){
+          if(lastRunStart){
+            const diff=(m.ts - lastRunStart)/1000;
+            replyIntervalsRaw.push(diff);
+            const capped=Math.min(diff, 12*3600);
+            replyIntervals.push(capped);
+            replyDetails.push({from:lastSender, to:m.sender, start:lastRunStart, end:m.ts, raw:diff, prev:lastMsg?lastMsg.rawText:'' , reply:m.rawText});
+          }
+          lastSender=m.sender; lastRunStart=m.ts; lastMsg=m;
+        } else {
+          // same run, keep first timestamp
+        }
+      }
+
+      // streaks: both sent that day
+      const bothDay = new Set();
+      const perDaySender = new Map();
+      for(const m of included){
+        const k = dayKey(m.ts);
+        const val = perDaySender.get(k)||{M:false,R:false};
+        if(m.sender==='Murat Kar') val.M=true; else val.R=true;
+        perDaySender.set(k,val);
+      }
+      for(const [k,v] of perDaySender.entries()) if(v.M&&v.R) bothDay.add(k);
+      const streaks=[]; let currentStreak=null; for(const d of daySet){ const key=dayKey(d); const active=bothDay.has(key); if(active){ if(!currentStreak) currentStreak={start:new Date(d), end:new Date(d), len:1}; else { currentStreak.len++; currentStreak.end=new Date(d);} } else { if(currentStreak){ streaks.push(currentStreak); currentStreak=null; } } }
+      if(currentStreak) streaks.push(currentStreak);
+      const longestStreak = streaks.sort((a,b)=>b.len-a.len||a.start-b.start)[0]||{len:0};
+      const streakBreaks = streaks.map(s=>({date:new Date(s.end.getFullYear(), s.end.getMonth(), s.end.getDate()+1), len:s.len}));
+
+      // longest messages top 5 each
+      for(const k of Object.keys(longest)){
+        longest[k] = longest[k].sort((a,b)=>b.chars-a.chars).slice(0,5);
+      }
+
+      // avg lengths
+      const avgChars = textMessages.length ? Math.round(textMessages.reduce((a,b)=>a+stripUrls(b.rawText).length,0)/textMessages.length) : 0;
+      const avgWords = textMessages.length ? Math.round(textMessages.reduce((a,b)=>a+tokenize(b.rawText).length,0)/textMessages.length) : 0;
+
+      const hist = bucketReply(replyIntervals);
+      const meanReply = replyIntervals.length? replyIntervals.reduce((a,b)=>a+b,0)/replyIntervals.length : 0;
+      const medianReply = replyIntervals.length? (replyIntervals.slice().sort((a,b)=>a-b)[Math.floor(replyIntervals.length/2)]) : 0;
+
+      const outliers = replyDetails.sort((a,b)=>b.raw-a.raw).slice(0,10);
+
+      // busy and calm days
+      const dayEntries = Array.from(daily.entries()).map(([k,v])=>({key:k,count:v}));
+      const busiest = dayEntries.slice().sort((a,b)=>b.count-a.count||a.key.localeCompare(b.key)).slice(0,10);
+      const calmest = dayEntries.slice().sort((a,b)=>a.count-b.count||a.key.localeCompare(b.key)).slice(0,10);
+
+      // media/sticker grouping
+      const stickerGroups = computeStickers(included, stickerIndex);
+
+      // word cloud
+      const wordFreq = new Map();
+      for(const m of textMessages){
+        const tokens = tokenize(m.rawText.replace(urlRegex,''));
+        tokens.forEach(t=>{ const norm=stripDiacritics(t); wordFreq.set(norm,(wordFreq.get(norm)||{count:0,forms:new Map()})); const entry=wordFreq.get(norm); entry.count++; const form= t; entry.forms.set(form,(entry.forms.get(form)||0)+1); });
+      }
+      const wordCloud = Array.from(wordFreq.entries()).map(([norm,obj])=>{ const bestForm = Array.from(obj.forms.entries()).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length)[0]?.[0]||norm; return {word:bestForm,count:obj.count}; }).sort((a,b)=>b.count-a.count).slice(0,60);
+
+      // emoji counts
+      const emojiFreq = new Map();
+      const emojiRegex = /[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]/gu;
+      for(const m of textMessages){
+        const matches = m.rawText.match(emojiRegex);
+        if(matches){ matches.forEach(e=>emojiFreq.set(e,(emojiFreq.get(e)||0)+1)); }
+      }
+      const emojiTop = Array.from(emojiFreq.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+      // topic categories
+      const topicCounts = {}; const topicSamples={};
+      for(const cat of Object.keys(TOPIC_CATS)){ topicCounts[cat]=0; topicSamples[cat]={m:null,r:null}; }
+      for(const m of textMessages){
+        const lower = stripDiacritics(m.rawText.toLowerCase());
+        for(const [cat,keys] of Object.entries(TOPIC_CATS)){
+          const hits = keys.some(k=> lower.includes(stripDiacritics(k)) );
+          if(hits){ topicCounts[cat]++; if(m.sender==='Murat Kar' && !topicSamples[cat].m) topicSamples[cat].m=m; if(m.sender==='Rümeysa Akbulut' && !topicSamples[cat].r) topicSamples[cat].r=m; }
+        }
+      }
+
+      // n-gram frequency (2-3 grams)
+      const ngramFreq = new Map();
+      for(const m of textMessages){
+        const toks = tokenize(m.rawText);
+        for(let n=2;n<=3;n++){
+          for(let i=0;i<=toks.length-n;i++){
+            const g = toks.slice(i,i+n).join(' ');
+            ngramFreq.set(g,(ngramFreq.get(g)||0)+1);
+          }
+        }
+      }
+      const topNgrams = Array.from(ngramFreq.entries()).sort((a,b)=>b[1]-a[1]).slice(0,12);
+
+      // laughter attribution
+      const laughs=[]; const laughScores=new Map();
+      for(let i=0;i<included.length;i++){
+        const m=included[i];
+        if(m.kind==='text' && isLaughter(m.rawText)){
+          const prev = findPrevOther(included,i,m.sender);
+          if(prev){
+            const key = prev.rawText;
+            const arr = laughScores.get(prev)||{msg:prev,laughs:[]};
+            arr.laughs.push(m.rawText);
+            laughScores.set(prev,arr);
+          }
+        }
+      }
+      const laughRanking = Array.from(laughScores.values()).map(v=>({msg:v.msg,laughs:v.laughs,count:v.laughs.length})).sort((a,b)=>b.count-a.count).slice(0,20);
+
+      // romance
+      const romanceMessages = textMessages.filter(m=> ROMANTIC.some(w=> stripDiacritics(m.rawText.toLowerCase()).includes(stripDiacritics(w)) ) || /❤|💕|💖|💘|💓|💗|💝|❤️/u.test(m.rawText)).sort((a,b)=>b.rawText.length-a.rawText.length).slice(0,10);
+
+      // date'i module
+      const dateMentions=[]; const dateWeek = new Map(); const dateCats=new Map();
+      for(const m of textMessages){
+        const cleanLower=stripDiacritics(m.rawText.toLowerCase());
+        if(/datei|date'i|date i|date’i/i.test(cleanLower)){
+          dateMentions.push(m);
+          const wk=weekKey(m.ts).key; dateWeek.set(wk,(dateWeek.get(wk)||0)+1);
+          const cat = extractDateCategory(cleanLower);
+          dateCats.set(cat,(dateCats.get(cat)||0)+1);
+        }
+      }
+
+      // weekly overlay
+      const weeklyOverlay = buildWeeklyOverlay(included, laughRanking, romanceMessages, dateMentions);
+
+      return {
+        countsBySender, kindsCount, daily, monthly, hourly, weekDay, longest, avgChars, avgWords, replyIntervals, replyIntervalsRaw, meanReply, medianReply, hist, outliers, busiest, calmest, streaks, longestStreak, streakBreaks, callDurations, callCounts, missedBySender, mediaCounts, wordCloud, emojiTop, topicCounts, topicSamples, topNgrams, laughRanking, romanceMessages, dateMentions, dateWeek, dateCats, stickerGroups, weeklyOverlay
+      };
+    }
+
+    function parseDuration(text){
+      let total=0;
+      const sn = /([0-9]+) sn\./i.exec(text); if(sn) total+=Number(sn[1]);
+      const dk = /([0-9]+) dk\./i.exec(text); if(dk) total+=Number(dk[1])*60;
+      const saat = /([0-9]+) saat/i.exec(text); if(saat) total+=Number(saat[1])*3600;
+      return total;
+    }
+
+    function bucketReply(list){
+      const buckets=[0,0,0,0,0,0,0,0];
+      const ranges=[[0,30],[30,60],[60,300],[300,900],[900,3600],[3600,10800],[10800,36000],[36000,43200]];
+      for(const v of list){
+        for(let i=0;i<ranges.length;i++){
+          const [a,b]=ranges[i];
+          if(v>=a && v<b){ buckets[i]++; break; }
+        }
+      }
+      return buckets;
+    }
+
+    function isLaughter(text){
+      if(laughRegex.test(text)) return true;
+      const clean = text.replace(urlRegex,'');
+      const tokens = clean.split(/\s+/);
+      return tokens.some(t=> t.length>=5 && t.length<=30 && /[haksjdg]/i.test(t) && (t.replace(/[aeiouıioöuü]/gi,'').length / t.length) > 0.5);
+    }
+
+    function findPrevOther(list, idx, sender){
+      for(let i=idx-1;i>=0;i--){ if(list[i].sender!==sender) return list[i]; }
+      return null;
+    }
+
+    function extractDateCategory(text){
+      const tokens = text.split(/\s+/);
+      for(let i=0;i<tokens.length;i++){
+        const t = tokens[i];
+        if(/datei|date'i|date’i|date/.test(t)){
+          for(let j=i-1;j>=0;j--){ const cand = tokens[j]; if(TURKISH_STOP.has(cand)) continue; return stripDiacritics(cand); }
+        }
+      }
+      return 'belirsiz';
+    }
+
+    async function buildStickerIndex(files){
+      const stickers = files.filter(f=>/STICKER/i.test(f.name) && f.name.toLowerCase().endsWith('.webp'));
+      const index = new Map();
+      for(const f of stickers){
+        const entry = {name:f.name, size:f.size, type:f.type};
+        index.set(f.name, entry);
+      }
+      // group by size
+      const sizeMap = new Map();
+      stickers.forEach(f=>{ if(!sizeMap.has(f.size)) sizeMap.set(f.size,[]); sizeMap.get(f.size).push(f); });
+      // hash only if collision
+      const hashMap = new Map();
+      for(const [size,list] of sizeMap.entries()){
+        if(list.length>1){
+          for(const f of list){
+            const buf = await f.arrayBuffer();
+            const hash = await crypto.subtle.digest('SHA-256', buf);
+            const hex = Array.from(new Uint8Array(hash)).slice(0,4).map(b=>b.toString(16).padStart(2,'0')).join('');
+            hashMap.set(f.name, `${size} bayt • ${hex}`);
+          }
+        }
+      }
+      return {byName:index, hashMap};
+    }
+
+    function computeStickers(messages, stickerIndex){
+      const groups = new Map();
+      for(const m of messages){
+        if(m.kind!=='sticker') continue;
+        const match = m.rawText.match(/<([^>]+)>/);
+        const filename = match?match[1]:null;
+        let key = 'bilinmiyor';
+        if(filename){
+          const entry = stickerIndex.byName.get(filename);
+          if(entry){ key = `${entry.size} bayt`; if(stickerIndex.hashMap.has(filename)) key = stickerIndex.hashMap.get(filename); }
+        }
+        if(!groups.has(key)) groups.set(key,{key,count:0, samples:[]});
+        const g = groups.get(key); g.count++; if(g.samples.length<3) g.samples.push({ts:m.ts, sender:m.sender});
+      }
+      const arr = Array.from(groups.values()).sort((a,b)=>b.count-a.count).slice(0,8);
+      arr.forEach(g=>{ g.label = localStorage.getItem('label_'+g.key)||''; });
+      return arr;
+    }
+
+    function buildWeeklyOverlay(messages, laughRanking, romanceMessages, dateMentions){
+      const weeks = new Map();
+      for(const m of messages){ const wk=weekKey(m.ts).key; if(!weeks.has(wk)) weeks.set(wk,{msg:0,laugh:0,rom:0,datei:0}); weeks.get(wk).msg++; }
+      laughRanking.forEach(l=>{ const wk=weekKey(l.msg.ts).key; if(weeks.has(wk)) weeks.get(wk).laugh += l.count; });
+      romanceMessages.forEach(m=>{ const wk=weekKey(m.ts).key; if(weeks.has(wk)) weeks.get(wk).rom++; });
+      dateMentions.forEach(m=>{ const wk=weekKey(m.ts).key; if(weeks.has(wk)) weeks.get(wk).datei++; });
+      const arr = Array.from(weeks.entries()).map(([k,v])=>({key:k,...v})).sort((a,b)=>a.key.localeCompare(b.key));
+      const normField = f=>{
+        const max = Math.max(...arr.map(a=>a[f]||0),1);
+        arr.forEach(a=>{ a[f+'Norm']= Math.round((a[f]||0)/max*100); });
+      };
+      ['msg','laugh','rom','datei'].forEach(normField);
+      return arr;
+    }
+
+    function formatDuration(sec){
+      const h=Math.floor(sec/3600); const m=Math.floor((sec%3600)/60); const s=Math.floor(sec%60);
+      if(h>0) return `${h} saat ${m} dk`;
+      if(m>0) return `${m} dk ${s} sn`;
+      return `${s} sn`;
+    }
+
+    function renderAll(parsed, agg){
+      contentEl.innerHTML='';
+      const rangeText = parsed.range.min? `${dayKey(parsed.range.min)} — ${dayKey(parsed.range.max)}` : 'Tarih yok';
+      contentEl.appendChild(html(`
+        <div class="cover">
+          <div class="pill">WhatsApp 2025 Wrapped</div>
+          <h1>Birlikte geçen mesajlı yıl</h1>
+          <p>${rangeText}</p>
+        </div>`));
+
+      // Summary page
+      const total = (agg.countsBySender['Murat Kar']||0) + (agg.countsBySender['Rümeysa Akbulut']||0);
+      contentEl.appendChild(html(`<div class="page">
+        <h2>Özet Pano</h2>
+        <div class="grid">
+          <div class="card"><h3>Toplam mesaj</h3><div class="pill">${total}</div><p>Murat: ${agg.countsBySender['Murat Kar']||0}</p><p>Rümeysa: ${agg.countsBySender['Rümeysa Akbulut']||0}</p></div>
+          <div class="card"><h3>Ortalama uzunluk</h3><p>${agg.avgChars} karakter</p><p>${agg.avgWords} kelime</p></div>
+          <div class="card"><h3>En uzun seri</h3><p>${agg.longestStreak.len||0} gün</p><p>${agg.longestStreak.start?dayKey(agg.longestStreak.start):''} → ${agg.longestStreak.end?dayKey(agg.longestStreak.end):''}</p></div>
+          <div class="card"><h3>Çağrı Özeti</h3><p>Sesli: ${agg.callCounts.voice} (${formatDuration(agg.callDurations.voice)})</p><p>Görüntülü: ${agg.callCounts.video} (${formatDuration(agg.callDurations.video)})</p><p>Kaçırılan: ${agg.callCounts.missedVoice+agg.callCounts.missedVideo}</p></div>
+        </div>
+      </div>`));
+
+      // Page A stats and charts
+      const pageA = html('<div class="page"><h2>A) Sayısal / İstatistik</h2><div class="grid"></div></div>');
+      const gridA = pageA.querySelector('.grid');
+      gridA.appendChild(chartCard('Günlük mesaj grafiği', agg.daily, drawLineChart));
+      gridA.appendChild(chartCard('Aylık mesaj grafiği', agg.monthly, drawBarChartMonth));
+      gridA.appendChild(chartCard('24 saat dağılımı', agg.hourly, drawBarChartHours));
+      gridA.appendChild(chartCard('Haftanın günleri', agg.weekDay, drawBarChartWeekdays));
+      gridA.appendChild(html(`<div class="card"><h3>En yoğun & sakin günler</h3><div class="flex"><div><h4>En yoğun</h4><ul class="list">${agg.busiest.map(d=>`<li>${d.key}: ${d.count}</li>`).join('')}</ul></div><div><h4>En sakin</h4><ul class="list">${agg.calmest.map(d=>`<li>${d.key}: ${d.count}</li>`).join('')}</ul></div></div></div>`));
+      gridA.appendChild(html(`<div class="card"><h3>Cevap süreleri</h3><p>Ortalama: ${formatDuration(agg.meanReply)}</p><p>Medyan: ${formatDuration(agg.medianReply)}</p><div><small>0-30sn → 10-12saat histogram</small><canvas data-type="hist"></canvas></div><div><h4>En uzun bekleyişler</h4><ul class="list">${agg.outliers.map(o=>`<li>${dayKey(o.start)} → ${dayKey(o.end)} (${formatDuration(o.raw)}): ${o.prev?.slice(0,80)||''}</li>`).join('')}</ul></div></div>`));
+      gridA.appendChild(html(`<div class="card"><h3>En uzun mesajlar</h3><div class="flex"><div><h4>Murat</h4>${agg.longest['Murat Kar'].map(m=>`<div class="list-item"><strong>${m.chars} karakter</strong><p>${escapeHtml(m.text)}</p></div>`).join('')}</div><div><h4>Rümeysa</h4>${agg.longest['Rümeysa Akbulut'].map(m=>`<div class="list-item"><strong>${m.chars} karakter</strong><p>${escapeHtml(m.text)}</p></div>`).join('')}</div></div></div>`));
+      contentEl.appendChild(pageA);
+
+      // Media & calls page
+      contentEl.appendChild(html(`<div class="page"><h2>Medya & Aramalar</h2><div class="grid">
+        <div class="card"><h3>Medya</h3><ul class="list"><li>Fotoğraf: ${agg.mediaCounts.photo||0}</li><li>Video: ${agg.mediaCounts.video||0}</li><li>Ses: ${agg.mediaCounts.audio||0}</li><li>Sticker: ${agg.mediaCounts.sticker||0}</li></ul></div>
+        <div class="card"><h3>Yanıtlanmış aramalar</h3><p>Sesli: ${agg.callCounts.voice} / ${formatDuration(agg.callDurations.voice)}</p><p>Görüntülü: ${agg.callCounts.video} / ${formatDuration(agg.callDurations.video)}</p></div>
+        <div class="card"><h3>Kaçırılan aramalar</h3><p>Sesli kaçırıldı: ${agg.callCounts.missedVoice}</p><p>Görüntülü kaçırıldı: ${agg.callCounts.missedVideo}</p><p>Murat başlattı: ${agg.missedBySender['Murat Kar']||0}</p><p>Rümeysa başlattı: ${agg.missedBySender['Rümeysa Akbulut']||0}</p></div>
+        <div class="card"><h3>Sticker grupları</h3><ul class="list">${agg.stickerGroups.map(g=>`<li><div class="flex"><strong>${g.label||g.key}</strong><input class="sticker-label" data-key="${g.key}" placeholder="Etiket" value="${g.label||''}"></div><small>${g.count} kullanım</small><div>${g.samples.map(s=>dayKey(s.ts)+' '+s.sender).join('<br>')}</div></li>`).join('')}</ul></div>
+      </div></div>`));
+
+      // Content analyses page
+      const wcHtml = agg.wordCloud.map(w=>`<span style="font-size:${12+Math.min(w.count*2,42)}px">${escapeHtml(w.word)} (${w.count})</span>`).join('');
+      contentEl.appendChild(html(`<div class="page"><h2>B) İçerik Analizleri</h2><div class="grid">
+        <div class="card"><h3>Kelime bulutu</h3><div class="word-cloud">${wcHtml}</div></div>
+        <div class="card"><h3>Emojiler</h3><ul class="list">${agg.emojiTop.map(e=>`<li>${e[0]} — ${e[1]}</li>`).join('')}</ul></div>
+        <div class="card"><h3>Kategoriler</h3><ul class="list">${Object.entries(agg.topicCounts).map(([k,v])=>`<li>${k}: ${v}</li>`).join('')}</ul></div>
+        <div class="card"><h3>Örnek temalar</h3><ul class="list">${Object.entries(agg.topicSamples).map(([k,v])=>`<li><strong>${k}</strong><br>Murat: ${v.m?escapeHtml(v.m.rawText.slice(0,120)):'-'}<br>Rümeysa: ${v.r?escapeHtml(v.r.rawText.slice(0,120)):'-'}</li>`).join('')}</ul></div>
+        <div class="card"><h3>Bu yılın 12 teması</h3><ul class="list">${agg.topNgrams.map(n=>`<li>${n[0]} (${n[1]})</li>`).join('')}</ul></div>
+      </div></div>`));
+
+      // Fun page
+      contentEl.appendChild(html(`<div class="page"><h2>C) Eğlenceli & Romantik</h2><div class="grid">
+        <div class="card"><h3>En çok gülünen mesajlar</h3><ul class="list">${agg.laughRanking.map(l=>`<li><strong>${escapeHtml(l.msg.rawText.slice(0,140))}</strong><br><small>${l.count} tepki</small><div>${l.laughs.slice(0,3).map(t=>escapeHtml(t)).join('<br>')}</div></li>`).join('')}</ul></div>
+        <div class="card"><h3>Romantik anlar</h3><ul class="list">${agg.romanceMessages.map(m=>`<li>${escapeHtml(m.rawText)}</li>`).join('')}</ul></div>
+      </div></div>`));
+
+      // Datei and overlay page
+      contentEl.appendChild(html(`<div class="page"><h2>Konuştuğumuz date'ler</h2><div class="grid">
+        <div class="card"><h3>Toplam</h3><p>${agg.dateMentions.length} kez</p><h4>Kategoriler</h4><ul class="list">${Array.from(agg.dateCats.entries()).map(([k,v])=>`<li>${k}: ${v}</li>`).join('')}</ul></div>
+        <div class="card"><h3>Haftalık yoğunluk</h3><canvas data-type="dateweek"></canvas></div>
+        <div class="card"><h3>Örnek satırlar</h3><ul class="list">${agg.dateMentions.slice(-10).map(m=>`<li>${escapeHtml(m.rawText)}</li>`).join('')}</ul></div>
+        <div class="card"><h3>Büyük final overlay</h3><canvas data-type="overlay"></canvas></div>
+      </div></div>`));
+
+      // Back cover
+      contentEl.appendChild(html(`<div class="backcover"><h2>Birlikte nice güzel sohbetlere</h2><p>Bu sayfa yerel olarak üretildi. Yazdırıp PDF olarak saklayın.</p></div>`));
+
+      // hydrate sticker inputs
+      document.querySelectorAll('.sticker-label').forEach(inp=>{
+        inp.addEventListener('change',()=>{ localStorage.setItem('label_'+inp.dataset.key, inp.value); });
+      });
+
+      // draw charts
+      document.querySelectorAll('canvas').forEach(cv=>{
+        const type=cv.dataset.type;
+        if(type==='hist') drawHistogram(cv, agg.hist);
+        else if(type==='dateweek') drawMapChart(cv, agg.dateWeek);
+        else if(type==='overlay') drawOverlay(cv, agg.weeklyOverlay);
+      });
+    }
+
+    function chartCard(title, data, drawer){
+      const card = html(`<div class="card"><h3>${title}</h3><canvas></canvas></div>`);
+      const cv = card.querySelector('canvas');
+      drawer(cv,data);
+      return card;
+    }
+
+    function drawLineChart(canvas, map){
+      const ctx = setupCanvas(canvas);
+      const entries = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+      const vals = entries.map(e=>e[1]); const max=Math.max(...vals,1);
+      ctx.strokeStyle='#b14aed'; ctx.beginPath();
+      entries.forEach((e,i)=>{ const x=i/(entries.length-1||1)*canvas.width; const y=canvas.height - (e[1]/max)*(canvas.height-20) -10; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+      ctx.stroke();
+    }
+
+    function drawBarChartMonth(canvas, map){
+      const ctx=setupCanvas(canvas);
+      const months = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+      const max=Math.max(...months.map(m=>m[1]),1);
+      months.forEach((m,i)=>{ const w=canvas.width/months.length; const h=(m[1]/max)*(canvas.height-20); ctx.fillStyle='#5d3fd3'; ctx.fillRect(i*w+4, canvas.height-h-10, w-8, h); });
+    }
+
+    function drawBarChartHours(canvas, arr){
+      const ctx=setupCanvas(canvas); const max=Math.max(...arr,1); const w=canvas.width/24; arr.forEach((v,i)=>{ const h=(v/max)*(canvas.height-20); ctx.fillStyle='#f59e0b'; ctx.fillRect(i*w+2, canvas.height-h-8, w-4, h); });
+    }
+
+    function drawBarChartWeekdays(canvas, arr){
+      const ctx=setupCanvas(canvas); const max=Math.max(...arr,1); const labels=['Pzt','Sal','Çar','Per','Cum','Cts','Paz']; const w=canvas.width/7; arr.forEach((v,i)=>{ const h=(v/max)*(canvas.height-20); ctx.fillStyle='#0ea5e9'; ctx.fillRect(i*w+4, canvas.height-h-8, w-8, h); ctx.fillStyle='#2d1b46'; ctx.fillText(labels[i], i*w+10, canvas.height-2); });
+    }
+
+    function drawHistogram(canvas, buckets){
+      const ctx=setupCanvas(canvas); const labels=['0-30sn','30-60sn','1-5dk','5-15dk','15-60dk','1-3s','3-10s','10-12s']; const max=Math.max(...buckets,1); const w=canvas.width/buckets.length; buckets.forEach((v,i)=>{ const h=(v/max)*(canvas.height-20); ctx.fillStyle='#22c55e'; ctx.fillRect(i*w+4, canvas.height-h-12, w-8, h); ctx.fillStyle='#2d1b46'; ctx.font='12px sans-serif'; ctx.fillText(labels[i], i*w+4, canvas.height-2); });
+    }
+
+    function drawMapChart(canvas, map){
+      const ctx=setupCanvas(canvas); const entries = Array.from(map.entries()).sort((a,b)=>a[0].localeCompare(b[0])); const max=Math.max(...entries.map(e=>e[1]),1); const w=canvas.width/Math.max(entries.length,1); entries.forEach((e,i)=>{ const h=(e[1]/max)*(canvas.height-20); ctx.fillStyle='#a855f7'; ctx.fillRect(i*w+4, canvas.height-h-10, w-8, h); ctx.fillStyle='#321b5a'; ctx.font='10px sans-serif'; ctx.fillText(e[0].slice(-3), i*w+4, canvas.height-2); });
+    }
+
+    function drawOverlay(canvas, data){
+      const ctx=setupCanvas(canvas); const maxWidth=canvas.width; const maxHeight=canvas.height; const keys=data.map(d=>d.key); const w=maxWidth/Math.max(data.length,1);
+      const colors={msg:'#6366f1',laugh:'#f97316',rom:'#ec4899',datei:'#22c55e'};
+      ['msgNorm','laughNorm','romNorm','dateiNorm'].forEach((field,idx)=>{
+        ctx.beginPath(); ctx.strokeStyle=Object.values(colors)[idx]; data.forEach((d,i)=>{ const x=i*w + w/2; const y=maxHeight - (d[field]/100)*(maxHeight-20) - 10; if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }); ctx.stroke();
+      });
+      ctx.fillStyle='#111'; ctx.font='10px sans-serif'; keys.forEach((k,i)=> ctx.fillText(k.slice(-2), i*w+2, maxHeight-2));
+    }
+
+    function setupCanvas(canvas){
+      const ratio = window.devicePixelRatio || 2;
+      const w = canvas.clientWidth||canvas.parentElement.clientWidth||600;
+      const h = canvas.clientHeight||260;
+      canvas.width = w*ratio; canvas.height=h*ratio; const ctx=canvas.getContext('2d'); ctx.scale(ratio, ratio); ctx.clearRect(0,0,w,h); ctx.strokeStyle='#222'; ctx.lineWidth=2; return ctx;
+    }
+
+    function html(str){
+      const t=document.createElement('template'); t.innerHTML=str.trim(); return t.content.firstElementChild;
+    }
+
+    function escapeHtml(str){
+      const map = {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"};
+      return (str||'').replace(/[&<>"']/g,c=>map[c]||c);
+    }
+
+    function renderDebug(parsed, agg){
+      debugEl.classList.remove('hidden');
+      const lines=[`Toplam satır: ${parsed.lines}`,`Toplam mesaj: ${parsed.messages.length}`,`Hata: ${parsed.parseErrors}`,`Aralık: ${parsed.range.min?dayKey(parsed.range.min):'-'} → ${parsed.range.max?dayKey(parsed.range.max):'-'}`];
+      lines.push('Tür sayıları: '+JSON.stringify(agg.kindsCount));
+      debugEl.innerHTML = '<strong>Debug</strong><br>'+lines.join('<br>');
+    }
+  </script>
+</body>
+</html>
