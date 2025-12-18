@@ -213,6 +213,7 @@
     const debugEl = document.getElementById('debug');
     const preparePrintBtn = document.getElementById('preparePrintBtn');
     const navEl = document.getElementById('nav');
+    const storage = createSafeStorage();
     let showFull = false;
 
     let latestAgg = null;
@@ -228,6 +229,22 @@
       allowRotate: true
     };
     const WORD_CLOUD_PALETTE = ['#34d399','#22d3ee','#f59e0b','#f472b6','#eab308','#60a5fa','#a855f7','#2dd4bf','#fb7185','#38bdf8','#f97316','#f43f5e','#10b981','#c084fc','#8b5cf6','#facc15'];
+
+    function createSafeStorage(){
+      try {
+        const k='__t';
+        localStorage.setItem(k,'1');
+        localStorage.removeItem(k);
+        return localStorage;
+      } catch(e){
+        const mem=new Map();
+        return {
+          getItem:(k)=>mem.has(k)?mem.get(k):null,
+          setItem:(k,v)=>mem.set(k,String(v)),
+          removeItem:(k)=>mem.delete(k)
+        };
+      }
+    }
 
     function createAnalysisWorker(){
       const code = `
@@ -273,6 +290,11 @@
     }
 
     const analysisWorker = createAnalysisWorker();
+    analysisWorker.onerror = (err)=>{
+      debugEl.classList.remove('hidden');
+      debugEl.textContent = 'Worker error: '+(err.message||err.filename||'bilinmiyor');
+      console.error('Worker error', err);
+    };
 
     document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
     preparePrintBtn.addEventListener('click', prepareForPDF);
@@ -652,7 +674,7 @@
         const file = match?match[1]:'';
         const meta = index.find(i=>file.includes(i.name));
         const key = meta? `${meta.size} bayt${meta.hash?` • ${meta.hash}`:''}` : 'Sticker';
-        const arr = groups.get(key)||{key,label:localStorage.getItem('label_'+key)||'',count:0,samples:[]};
+        const arr = groups.get(key)||{key,label:'',count:0,samples:[]};
         arr.count++; if(arr.samples.length<3) arr.samples.push(m);
         groups.set(key,arr);
       }
@@ -956,7 +978,7 @@
           </ul>
         </section>`});
 
-      const savedClosing = localStorage.getItem('closing_note')||'Bu yılı nasıl kapatmak istersin? Buraya son sözünü yaz.';
+      const savedClosing = storage.getItem('closing_note')||'Bu yılı nasıl kapatmak istersin? Buraya son sözünü yaz.';
       pages.push({id:'page-19',html:`
         <section class="page" id="closing">
           <div class="page-header"><div><div class="pill">Sayfa 19</div><h2 class="page-title">Son Söz</h2><p class="page-sub">Ekranda düzenle, baskıda sabit</p></div></div>
@@ -1007,13 +1029,20 @@
 
     function hydrateSection(section, agg){
       if(!section) return;
-      section.querySelector('#closingInput')?.addEventListener('input',(e)=>{
-        localStorage.setItem('closing_note', e.target.value);
+      const closingInput = section.querySelector('#closingInput');
+      if(closingInput){
+        closingInput.addEventListener('input',(e)=>{
+          storage.setItem('closing_note', e.target.value);
+          const target=document.getElementById('closingPreview');
+          if(target) target.textContent = e.target.value;
+        });
         const target=document.getElementById('closingPreview');
-        if(target) target.textContent = e.target.value;
-      });
+        if(target) target.textContent = closingInput.value;
+      }
       section.querySelectorAll('.sticker-label').forEach(inp=>{
-        inp.addEventListener('change',()=>{ localStorage.setItem('label_'+inp.dataset.key, inp.value); });
+        const stored = storage.getItem('label_'+inp.dataset.key);
+        if(stored!==null) inp.value = stored; else if(!inp.value && inp.dataset.label) inp.value = inp.dataset.label;
+        inp.addEventListener('change',()=>{ storage.setItem('label_'+inp.dataset.key, inp.value); });
       });
       section.querySelectorAll('canvas').forEach(cv=>{
         const type=cv.dataset.type;
