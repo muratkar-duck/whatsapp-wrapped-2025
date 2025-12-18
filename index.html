@@ -141,7 +141,10 @@
     @media print {
       body { background: #fff; }
       .controls, .screen-nav, .debug, .no-print { display: none !important; }
-      .page { box-shadow: none; margin: 0 auto; width: 210mm; padding: 18mm 18mm 16mm; }
+      .page { box-shadow: none; margin: 0 auto; width: 210mm; padding: 20mm 18mm 16mm; }
+      .grid { display: block; }
+      .card { margin-bottom: 12mm; break-inside: avoid; }
+      .chart-box { margin: 8mm 0; break-inside: avoid; }
       .page, .page * { transition: none !important; animation: none !important; }
       .page { break-after: page; }
       .avoid-break { break-inside: avoid; }
@@ -353,9 +356,24 @@
       if(latestPages.length && latestAgg){
         renderAllPagesSync(latestPages, latestAgg);
       }
-      if(latestAgg){ renderWordCloud(latestAgg, 'print'); }
-      freezeCanvasesForPrint();
-      setTimeout(()=>{ window.print(); }, 500);
+      const renderChartsForPrint = ()=>{
+        if(latestAgg){
+          document.querySelectorAll('canvas[data-type]').forEach(cv=>{
+            const type=cv.dataset.type;
+            if(type==='line') drawLineChart(cv, latestAgg.daily);
+            else if(type==='month') drawBarChartMonth(cv, latestAgg.monthly);
+            else if(type==='hours') drawBarChartHours(cv, latestAgg.hourly);
+            else if(type==='week') drawBarChartWeekdays(cv, latestAgg.weekDay);
+            else if(type==='hist') drawHistogram(cv, latestAgg.hist);
+            else if(type==='dateweek') drawMapChart(cv, latestAgg.dateWeek);
+            else if(type==='overlay') drawOverlay(cv, latestAgg.weeklyOverlay);
+            else if(type==='wordcloud') drawWordCloud(cv, latestAgg, 'print');
+          });
+        }
+        freezeCanvasesForPrint();
+        window.print();
+      };
+      requestAnimationFrame(()=>requestAnimationFrame(renderChartsForPrint));
     }
     window.addEventListener('afterprint', ()=> document.body.classList.remove('print-mode'));
 
@@ -1272,8 +1290,10 @@
 
     function setupCanvas(canvas){
       const ratio = window.devicePixelRatio || 2;
-      const w = canvas.clientWidth||canvas.parentElement.clientWidth||600;
-      const h = canvas.clientHeight||260;
+      let w = canvas.clientWidth||canvas.parentElement?.clientWidth||0;
+      let h = canvas.clientHeight||canvas.parentElement?.clientHeight||0;
+      if(!w) w = 700;
+      if(!h) h = 260;
       canvas.width = w*ratio; canvas.height=h*ratio; const ctx=canvas.getContext('2d'); ctx.scale(ratio, ratio); ctx.clearRect(0,0,w,h); ctx.strokeStyle='#222'; ctx.lineWidth=2; return ctx;
     }
 
