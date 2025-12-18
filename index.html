@@ -101,14 +101,22 @@
     .chart-box { background: #fff; border-radius: 14px; border: 1px solid var(--line); padding: 10px; }
     canvas { width: 100%; height: 240px; display: block; }
 
-    .word-cloud-frame { background: #0b0b0f; border-radius: 16px; padding: 14px; aspect-ratio: 3 / 2; width: 100%; max-width: 900px; margin: 0 auto; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04), 0 16px 38px rgba(0,0,0,0.25); }
-    .word-cloud-frame canvas { width: 100%; height: 100% !important; display: block; }
-    .word-cloud-hint { color: #8e8fa4; font-size: 12px; text-align: center; margin-top: 8px; }
-    .word-cloud-settings { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px; }
-    .word-cloud-settings label { display: block; margin-bottom: 6px; color: #e5defc; font-weight: 700; }
+    svg.chart { width: 100%; height: 260px; display: block; font-family: 'Inter','Segoe UI',system-ui,-apple-system,sans-serif; }
+    .chart text { fill: #2b213f; font-size: 12px; }
+    .chart .axis { stroke: #2b213f; stroke-width: 1; }
+    .chart .grid { stroke: #e4deef; stroke-width: 1; }
+    .chart .label { font-weight: 700; }
+    .chart .title { font-size: 14px; font-weight: 800; }
+    .chart .subtitle { font-size: 12px; fill: var(--muted); }
+
+    .word-cloud-frame { background: #f8f5fd; border-radius: 16px; padding: 14px; aspect-ratio: 3 / 2; width: 100%; max-width: 900px; margin: 0 auto; box-shadow: inset 0 0 0 1px var(--line), 0 10px 26px rgba(51,27,92,0.08); border: 1px solid var(--line); }
+    .word-cloud-frame canvas { width: 100%; height: 100% !important; display: block; background: transparent; }
+    .word-cloud-hint { color: #6b5d8a; font-size: 12px; text-align: center; margin-top: 8px; }
+    .word-cloud-settings { margin-top: 8px; border-top: 1px solid var(--line); padding-top: 8px; }
+    .word-cloud-settings label { display: block; margin-bottom: 6px; color: #2b213f; font-weight: 700; }
     .word-cloud-settings input, .word-cloud-settings select { width: 100%; margin-bottom: 6px; }
     .emoji-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; text-align: center; }
-    .emoji-item { font-size: 26px; }
+    .emoji-item { font-size: 36px; line-height: 1.2; }
     .two-col-list { columns: 2; column-gap: 12px; }
     .two-col-list li { break-inside: avoid; }
 
@@ -128,6 +136,8 @@
       box-shadow: 0 8px 32px rgba(0,0,0,0.35);
     }
 
+    @page { size: A4; margin: 12mm; }
+
     @media print {
       body { background: #fff; }
       .controls, .screen-nav, .debug, .no-print { display: none !important; }
@@ -138,6 +148,7 @@
       .print-trim { display: none !important; }
       .extra { display: none !important; }
       canvas { height: 200px; }
+      svg.chart text { font-size: 11px; }
     }
   </style>
 </head>
@@ -184,6 +195,20 @@
     const laughRegex = /(?:😂|🤣|haha|ahah|kdkd|sjsj|xdd|:p)/i;
     const urlRegex = /(https?:\/\/[^\s]+|www\.[^\s]+)/gi;
 
+    function looksLikeLaugh(text){
+      if(!text) return false;
+      const normalized = normalizeText(text);
+      const smash = /[ahsjdkgp]{4,}/i;
+      const burst = /(haha|ahah|sjsj|kdkd|lol|lmao|x?dd)/i;
+      return laughRegex.test(text) || burst.test(normalized) || smash.test(normalized);
+    }
+
+    function scoreLaughBurst(text){
+      const emojis = (text.match(/😂|🤣/g)||[]).length;
+      const lenBonus = Math.min(Math.max(text.length-4,0)/10, 3);
+      return 1 + emojis + lenBonus;
+    }
+
     const contentEl = document.getElementById('content');
     const debugEl = document.getElementById('debug');
     const preparePrintBtn = document.getElementById('preparePrintBtn');
@@ -192,6 +217,7 @@
 
     let latestAgg = null;
     let latestParsed = null;
+    let latestPages = [];
     const wordCloudConfig = {
       maxWordsScreen: 140,
       maxWordsPrint: 120,
@@ -202,6 +228,51 @@
       allowRotate: true
     };
     const WORD_CLOUD_PALETTE = ['#34d399','#22d3ee','#f59e0b','#f472b6','#eab308','#60a5fa','#a855f7','#2dd4bf','#fb7185','#38bdf8','#f97316','#f43f5e','#10b981','#c084fc','#8b5cf6','#facc15'];
+
+    function createAnalysisWorker(){
+      const code = `
+        const TURKISH_STOP = new Set(${JSON.stringify([...TURKISH_STOP])});
+        const ROMANTIC = ${JSON.stringify(ROMANTIC)};
+        const DATEI_TOKENS = ${JSON.stringify(DATEI_TOKENS)};
+        const TOPIC_CATS = ${JSON.stringify(TOPIC_CATS)};
+        const WORD_CLOUD_PALETTE = ${JSON.stringify(WORD_CLOUD_PALETTE)};
+        const urlRegex = ${urlRegex.toString()};
+        const laughRegex = ${laughRegex.toString()};
+        ${stripUrls.toString()};
+        ${dayKey.toString()};
+        ${monthKey.toString()};
+        ${hourOfDay.toString()};
+        ${weekday.toString()};
+        ${weekKey.toString()};
+        ${bucketRange.toString()};
+        ${tokenize.toString()};
+        ${stripDiacritics.toString()};
+        ${normalizeText.toString()};
+        ${extractEmojiTokens.toString()};
+        ${isEmojiCluster.toString()};
+        ${looksLikeLaugh.toString()};
+        ${scoreLaughBurst.toString()};
+        ${classify.toString()};
+        ${parseChat.toString()};
+        ${parseDuration.toString()};
+        ${bucketReply.toString()};
+        ${computeStickers.toString()};
+        ${fillWeek.toString()};
+        ${buildOverlay.toString()};
+        ${computeAnalytics.toString()};
+        self.onmessage = (e)=>{
+          const {text, stickerIndex} = e.data;
+          const parsed = parseChat(text);
+          const agg = computeAnalytics(parsed.messages, parsed.range, stickerIndex||[]);
+          self.postMessage({parsed:{...parsed, messagesCount: parsed.messages.length}, agg});
+        };
+      `;
+      const blob = new Blob([code], {type:'application/javascript'});
+      const worker = new Worker(URL.createObjectURL(blob));
+      return worker;
+    }
+
+    const analysisWorker = createAnalysisWorker();
 
     document.getElementById('analyzeBtn').addEventListener('click', handleAnalyze);
     preparePrintBtn.addEventListener('click', prepareForPDF);
@@ -219,13 +290,16 @@
       const file = document.getElementById('fileInput').files[0];
       if(!file){ alert('Lütfen sohbet .txt dosyasını seçin'); return; }
       const text = await file.text();
-      const parsed = parseChat(text);
       const stickerIndex = await buildStickerIndex(mediaFiles);
-      const aggregates = computeAnalytics(parsed.messages, parsed.range, stickerIndex);
-      latestAgg = aggregates;
+      const wait = new Promise((resolve)=>{
+        analysisWorker.onmessage = (e)=>resolve(e.data);
+      });
+      analysisWorker.postMessage({text, stickerIndex});
+      const {parsed, agg} = await wait;
+      latestAgg = agg;
       latestParsed = parsed;
-      renderAll(parsed, aggregates);
-      renderDebug(parsed, aggregates);
+      renderAll(parsed, agg);
+      renderDebug(parsed, agg);
     }
 
     function freezeCanvasesForPrint(){
@@ -254,6 +328,9 @@
 
     function prepareForPDF(){
       document.body.classList.add('print-mode');
+      if(latestPages.length && latestAgg){
+        renderAllPagesSync(latestPages, latestAgg);
+      }
       if(latestAgg){ renderWordCloud(latestAgg, 'print'); }
       freezeCanvasesForPrint();
       setTimeout(()=>{ window.print(); }, 500);
@@ -331,6 +408,25 @@
     function stripDiacritics(str){
       const map = {'ç':'c','ğ':'g','ı':'i','ö':'o','ş':'s','ü':'u'};
       return str.replace(/[çğıöşü]/g,m=>map[m]).replace(/[ÇĞİÖŞÜ]/g,m=>map[m.toLowerCase()]);
+    }
+
+    function normalizeText(str){
+      return stripDiacritics(stripUrls((str||'').toLowerCase()));
+    }
+
+    function extractEmojiTokens(text){
+      const seg = new Intl.Segmenter('tr', { granularity: 'grapheme' });
+      const tokens = [];
+      for(const {segment} of seg.segment(text||'')){
+        if(isEmojiCluster(segment)) tokens.push(segment);
+      }
+      return tokens;
+    }
+
+    function isEmojiCluster(cluster){
+      if(!cluster) return false;
+      const pict = /\p{Extended_Pictographic}/u;
+      return pict.test(cluster) || /\u200d|\ufe0f/.test(cluster);
     }
 
     function computeAnalytics(messages, range, stickerIndex){
@@ -421,26 +517,31 @@
 
       const wordFreq = new Map();
       for(const m of textMessages){
-        const tokens = tokenize(m.rawText.replace(urlRegex,''));
+        const tokens = tokenize(stripUrls(m.rawText));
         tokens.forEach(t=>{ const norm=stripDiacritics(t); wordFreq.set(norm,(wordFreq.get(norm)||{count:0,forms:new Map()})); const entry=wordFreq.get(norm); entry.count++; const form= t; entry.forms.set(form,(entry.forms.get(form)||0)+1); });
       }
       const wordCloud = Array.from(wordFreq.entries()).map(([norm,obj])=>{ const bestForm = Array.from(obj.forms.entries()).sort((a,b)=>b[1]-a[1]||b[0].length-a[0].length)[0]?.[0]||norm; return {word:bestForm,count:obj.count}; }).sort((a,b)=>b.count-a.count).slice(0,240);
 
       const emojiFreq = new Map();
-      const emojiRegex = /[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]/gu;
       for(const m of textMessages){
-        const matches = m.rawText.match(emojiRegex);
-        if(matches){ matches.forEach(e=>emojiFreq.set(e,(emojiFreq.get(e)||0)+1)); }
+        const matches = extractEmojiTokens(m.rawText);
+        matches.forEach(e=>emojiFreq.set(e,(emojiFreq.get(e)||0)+1));
       }
       const emojiTop = Array.from(emojiFreq.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10);
+      const emojiDebug=[];
+      for(const m of textMessages){
+        const tokens = extractEmojiTokens(m.rawText);
+        for(const t of tokens){ if(emojiDebug.length<20) emojiDebug.push(t); }
+        if(emojiDebug.length>=20) break;
+      }
 
       const topicCounts={};
       const topicSamples={};
       for(const [cat,kw] of Object.entries(TOPIC_CATS)){ topicCounts[cat]=0; topicSamples[cat]={m:null,r:null}; }
       for(const m of textMessages){
-        const tokens = tokenize(m.rawText);
+        const norm = normalizeText(m.rawText);
         for(const [cat,kw] of Object.entries(TOPIC_CATS)){
-          if(tokens.some(t=>kw.includes(t))){
+          if(kw.some(token=> norm.includes(token))){
             topicCounts[cat]++;
             if(m.sender==='Murat Kar' && !topicSamples[cat].m) topicSamples[cat].m=m;
             if(m.sender==='Rümeysa Akbulut' && !topicSamples[cat].r) topicSamples[cat].r=m;
@@ -449,26 +550,40 @@
       }
 
       const ngramCounts = new Map();
+      const ngramExamples = new Map();
       for(const m of textMessages){
-        const tokens = tokenize(m.rawText);
+        const tokens = tokenize(stripUrls(m.rawText));
         for(let n=2;n<=3;n++){
           for(let i=0;i<=tokens.length-n;i++){
-            const key=tokens.slice(i,i+n).join(' ');
+            const slice=tokens.slice(i,i+n);
+            const hasMeaning = slice.some(t=>t.length>=4 && !TURKISH_STOP.has(stripDiacritics(t)));
+            if(!hasMeaning) continue;
+            const key=slice.join(' ');
             ngramCounts.set(key,(ngramCounts.get(key)||0)+1);
+            if(!ngramExamples.has(key)) ngramExamples.set(key, m);
           }
         }
       }
-      const topNgrams = Array.from(ngramCounts.entries()).sort((a,b)=>b[1]-a[1]).slice(0,12);
+      const topNgramsRaw = Array.from(ngramCounts.entries()).filter(([,c])=>c>=40).sort((a,b)=>b[1]-a[1]).slice(0,12);
+      const topNgrams = topNgramsRaw.length>=6 ? topNgramsRaw.map(([k,v])=>({key:k,count:v,example:ngramExamples.get(k)})) : [];
 
       const laughRanking=[];
+      let lastBurst={M:null,R:null};
       for(const m of textMessages){
-        if(laughRegex.test(m.rawText)){
-          const prev = included.findLast(x=>x.ts<m.ts && x.sender!==m.sender && x.kind==='text');
-          if(prev){
-            const current = laughRanking.find(x=>x.msg===prev);
-            if(current){ current.count++; current.laughs.push(m.rawText); }
-            else laughRanking.push({msg:prev,count:1,laughs:[m.rawText]});
-          }
+        if(!looksLikeLaugh(m.rawText)) continue;
+        const senderKey = m.sender==='Murat Kar'?'M':'R';
+        const last = lastBurst[senderKey];
+        if(last && (m.ts - last.ts) <= 120000){
+          last.messages.push(m);
+          continue;
+        }
+        const prev = included.findLast(x=>x.ts<m.ts && x.sender!==m.sender && x.kind==='text');
+        if(prev){
+          const score = scoreLaughBurst(m.rawText);
+          const entry = laughRanking.find(x=>x.msg===prev);
+          if(entry){ entry.count += score; entry.laughs.push(m.rawText); }
+          else laughRanking.push({msg:prev,count:score,laughs:[m.rawText],ts:m.ts});
+          lastBurst[senderKey] = {ts:m.ts, messages:[m]};
         }
       }
       laughRanking.sort((a,b)=>b.count-a.count).splice(20);
@@ -490,7 +605,7 @@
 
       const overlay = buildOverlay(daily, laughRanking, romanceMessages, dateWeek);
 
-      return {countsBySender,kindsCount,daily,monthly,hourly,weekDay,longest,replyIntervals,replyIntervalsRaw,replyDetails,hist,meanReply,medianReply,outliers,busiest,calmest,mediaCounts,callCounts,callDurations,missedBySender,stickerGroups,wordCloud,emojiTop,topicCounts,topicSamples,topNgrams,laughRanking,romanceMessages,dateMentions,dateCats,dateWeek:fillWeek(dateWeek),weeklyOverlay:overlay,longestStreak,streaks,streakBreaks,avgChars,avgWords,range};
+      return {countsBySender,kindsCount,daily,monthly,hourly,weekDay,longest,replyIntervals,replyIntervalsRaw,replyDetails,hist,meanReply,medianReply,outliers,busiest,calmest,mediaCounts,callCounts,callDurations,missedBySender,stickerGroups,wordCloud,emojiTop,emojiDebug,topicCounts,topicSamples,topNgrams,laughRanking,romanceMessages,dateMentions,dateCats,dateWeek:fillWeek(dateWeek),weeklyOverlay:overlay,longestStreak,streaks,streakBreaks,avgChars,avgWords,range};
     }
 
     function fillWeek(map){
@@ -567,6 +682,13 @@
       if(h>0) return `${h} saat ${m} dk`;
       if(m>0) return `${m} dk ${s} sn`;
       return `${s} sn`;
+    }
+
+    function formatRatio(part, total){
+      const t = Number(total)||0;
+      if(!t) return '0% (0)';
+      const p = Number(part)||0;
+      return `${Math.round(p/t*100)}% (${p})`;
     }
 
     function truncate(str, len){
@@ -732,13 +854,15 @@
           </div>
         </section>`});
 
-      pages.push({id:'page-13',html:`
-        <section class="page" id="bonus">
-          <div class="page-header"><div><div class="pill">Sayfa 13</div><h2 class="page-title">Bu yılın en çok konuşulan 12 teması</h2><p class="page-sub">N-gram listesi</p></div></div>
-          <div class="card avoid-break">
-            <ul class="list">${agg.topNgrams.map((n,i)=>`<li class="${i>=7?'print-trim extra':''}">${n[0]} — ${n[1]}</li>`).join('')}</ul>
-          </div>
-        </section>`});
+      if(agg.topNgrams && agg.topNgrams.length){
+        pages.push({id:'page-13',html:`
+          <section class="page" id="bonus">
+            <div class="page-header"><div><div class="pill">Sayfa 13</div><h2 class="page-title">Bu yılın en çok konuşulan 12 kalıbı</h2><p class="page-sub">Anlamlı bigram/trigram</p></div></div>
+            <div class="card avoid-break">
+              <ul class="list">${agg.topNgrams.map((n,i)=>`<li class="${i>=7?'print-trim extra':''}">${n.key} — ${n.count}${n.example?`<div class=\"muted\">${truncate(escapeHtml(n.example.rawText),140)}</div>`:''}</li>`).join('')}</ul>
+            </div>
+          </section>`});
+      }
 
       const laughTop = agg.laughRanking.slice(0,8);
       pages.push({id:'page-14',html:`
@@ -772,24 +896,42 @@
 
       pages.push({id:'page-16',html:`
         <section class="page" id="calls">
-          <div class="page-header"><div><div class="pill">Sayfa 16</div><h2 class="page-title">Çağrılar & Medya</h2><p class="page-sub">Temiz kartlar</p></div></div>
-          <div class="two-col">
-            <div class="card">
-              <h3>Medya toplam</h3>
-              <ul class="list">
-                <li>Fotoğraf: ${agg.mediaCounts.photo||0}</li>
-                <li>Video: ${agg.mediaCounts.video||0}</li>
-                <li>Ses: ${agg.mediaCounts.audio||0}</li>
-                <li>Sticker: ${agg.mediaCounts.sticker||0}</li>
-              </ul>
+          <div class="page-header"><div><div class="pill">Sayfa 16</div><h2 class="page-title">Çağrılar & Medya</h2><p class="page-sub">KPI kartları</p></div></div>
+          <div class="grid">
+            ${[['Fotoğraf',agg.mediaCounts.photo,'#ec4899'],['Video',agg.mediaCounts.video,'#6366f1'],['Ses',agg.mediaCounts.audio,'#22c55e'],['Sticker',agg.mediaCounts.sticker,'#f59e0b']].map(k=>`<div class="card" style="grid-column: span 3;">
+              <div class="muted">${k[0]}</div><div class="kpi" style="color:${k[2]};">${k[1]||0}</div>
+            </div>`).join('')}
+          </div>
+          <div class="grid" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 4;">
+              <h3>Sesli yanıtlanan</h3>
+              <div class="kpi">${agg.callCounts.voice||0}</div>
+              <div class="muted">Toplam süre: ${formatDuration(agg.callDurations.voice)}</div>
             </div>
-            <div class="card">
-              <h3>Çağrılar</h3>
-              <p>Sesli: ${agg.callCounts.voice} / ${formatDuration(agg.callDurations.voice)}</p>
-              <p>Görüntülü: ${agg.callCounts.video} / ${formatDuration(agg.callDurations.video)}</p>
-              <p>Kaçırılan: ${agg.callCounts.missedVoice+agg.callCounts.missedVideo}</p>
-              <p class="muted">Murat başlattı: ${agg.missedBySender?.['Murat Kar']||0}</p>
-              <p class="muted">Rümeysa başlattı: ${agg.missedBySender?.['Rümeysa Akbulut']||0}</p>
+            <div class="card" style="grid-column: span 4;">
+              <h3>Görüntülü yanıtlanan</h3>
+              <div class="kpi">${agg.callCounts.video||0}</div>
+              <div class="muted">Toplam süre: ${formatDuration(agg.callDurations.video)}</div>
+            </div>
+            <div class="card" style="grid-column: span 4;">
+              <h3>Cevapsız</h3>
+              <div class="kpi">${agg.callCounts.missedVoice+agg.callCounts.missedVideo}</div>
+              <div class="muted">Sesli: ${agg.callCounts.missedVoice||0} • Görüntülü: ${agg.callCounts.missedVideo||0}</div>
+            </div>
+          </div>
+          <div class="grid" style="margin-top:12px;">
+            <div class="card" style="grid-column: span 4;">
+              <h4>Cevapsızların oranı</h4>
+              <p>Murat başlattı: ${formatRatio(agg.missedBySender?.['Murat Kar'], agg.callCounts.missedVoice+agg.callCounts.missedVideo)}</p>
+              <p>Rümeysa başlattı: ${formatRatio(agg.missedBySender?.['Rümeysa Akbulut'], agg.callCounts.missedVoice+agg.callCounts.missedVideo)}</p>
+            </div>
+            <div class="card" style="grid-column: span 4;">
+              <h4>Murat aramalarının cevapsız oranı</h4>
+              <p>${formatRatio(agg.missedBySender?.['Murat Kar'], (agg.callCounts.voice+agg.callCounts.video+agg.callCounts.missedVoice+agg.callCounts.missedVideo)/2)}</p>
+            </div>
+            <div class="card" style="grid-column: span 4;">
+              <h4>Rümeysa aramalarının cevapsız oranı</h4>
+              <p>${formatRatio(agg.missedBySender?.['Rümeysa Akbulut'], (agg.callCounts.voice+agg.callCounts.video+agg.callCounts.missedVoice+agg.callCounts.missedVideo)/2)}</p>
             </div>
           </div>
         </section>`});
@@ -829,23 +971,51 @@
           <p class="muted">Yerelde üretildi. PDF olarak saklayın.</p>
         </section>`});
 
-      pages.forEach(p=>{
-        contentEl.insertAdjacentHTML('beforeend', p.html);
-        const navLabel = `S${p.id.split('-')[1]}`;
-        navEl.insertAdjacentHTML('beforeend', `<a href="#${p.id}">${navLabel}</a>`);
-      });
+      latestPages = pages;
+      renderPagesGradually(pages, agg);
+    }
 
-      document.querySelector('#closingInput')?.addEventListener('input',(e)=>{
+    function renderAllPagesSync(pages, agg){
+      contentEl.innerHTML='';
+      navEl.innerHTML='';
+      pages.forEach(p=>renderSinglePage(p, agg));
+    }
+
+    function renderPagesGradually(pages, agg){
+      contentEl.innerHTML='';
+      navEl.innerHTML='';
+      const queue = [...pages];
+      const first = queue.splice(0,2);
+      first.forEach(p=>renderSinglePage(p, agg));
+      const schedule = window.requestIdleCallback || window.requestAnimationFrame;
+      const pump = ()=>{
+        const next = queue.shift();
+        if(!next) return;
+        renderSinglePage(next, agg);
+        if(queue.length) schedule(pump);
+      };
+      schedule(pump);
+    }
+
+    function renderSinglePage(p, agg){
+      contentEl.insertAdjacentHTML('beforeend', p.html);
+      const navLabel = `S${p.id.split('-')[1]}`;
+      navEl.insertAdjacentHTML('beforeend', `<a href="#${p.id}">${navLabel}</a>`);
+      const section = document.getElementById(p.id);
+      hydrateSection(section, agg);
+    }
+
+    function hydrateSection(section, agg){
+      if(!section) return;
+      section.querySelector('#closingInput')?.addEventListener('input',(e)=>{
         localStorage.setItem('closing_note', e.target.value);
         const target=document.getElementById('closingPreview');
         if(target) target.textContent = e.target.value;
       });
-
-      document.querySelectorAll('.sticker-label').forEach(inp=>{
+      section.querySelectorAll('.sticker-label').forEach(inp=>{
         inp.addEventListener('change',()=>{ localStorage.setItem('label_'+inp.dataset.key, inp.value); });
       });
-
-      document.querySelectorAll('canvas').forEach(cv=>{
+      section.querySelectorAll('canvas').forEach(cv=>{
         const type=cv.dataset.type;
         if(type==='line') drawLineChart(cv, agg.daily);
         else if(type==='month') drawBarChartMonth(cv, agg.monthly);
@@ -870,7 +1040,7 @@
       const ctx = canvas.getContext('2d');
       ctx.setTransform(scale,0,0,scale,0,0);
       ctx.clearRect(0,0,cssWidth,cssHeight);
-      ctx.fillStyle = '#0b0b0f';
+      ctx.fillStyle = '#f8f5fd';
       ctx.fillRect(0,0,cssWidth,cssHeight);
 
       const maxWords = mode==='print'? wordCloudConfig.maxWordsPrint : wordCloudConfig.maxWordsScreen;
@@ -912,8 +1082,8 @@
 
       ctx.textAlign='center';
       ctx.textBaseline='middle';
-      ctx.shadowColor='rgba(0,0,0,0.35)';
-      ctx.shadowBlur=4;
+      ctx.shadowColor='rgba(41,25,65,0.15)';
+      ctx.shadowBlur=2;
       ctx.shadowOffsetY=1;
       placements.forEach(p=>{
         ctx.save();
@@ -921,6 +1091,9 @@
         if(p.rotate) ctx.rotate(Math.PI/2);
         ctx.fillStyle=p.color;
         ctx.font = `${p.fontSize}px ${getWordCloudFont()}`;
+        ctx.lineWidth = 1;
+        ctx.strokeStyle='rgba(255,255,255,0.35)';
+        ctx.strokeText(p.text,0,0);
         ctx.fillText(p.text,0,0);
         ctx.restore();
       });
@@ -1086,8 +1259,10 @@
 
     function renderDebug(parsed, agg){
       debugEl.classList.remove('hidden');
-      const lines=[`Toplam satır: ${parsed.lines}`,`Toplam mesaj: ${parsed.messages.length}`,`Hata: ${parsed.parseErrors}`,`Aralık: ${parsed.range.min?dayKey(parsed.range.min):'-'} → ${parsed.range.max?dayKey(parsed.range.max):'-'}`];
+      const msgCount = parsed.messages?.length ?? parsed.messagesCount ?? 0;
+      const lines=[`Toplam satır: ${parsed.lines}`,`Toplam mesaj: ${msgCount}`,`Hata: ${parsed.parseErrors}`,`Aralık: ${parsed.range.min?dayKey(parsed.range.min):'-'} → ${parsed.range.max?dayKey(parsed.range.max):'-'}`];
       lines.push('Tür sayıları: '+JSON.stringify(agg.kindsCount));
+      if(agg.emojiDebug?.length) lines.push('Emoji örnekleri: '+agg.emojiDebug.slice(0,20).join(' '));
       debugEl.innerHTML = '<strong>Debug</strong><br>'+lines.join('<br>');
       debugEl.appendChild(buildWordCloudControls());
     }
