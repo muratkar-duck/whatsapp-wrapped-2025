@@ -13,6 +13,7 @@ Tek dosyalık, çevrimdışı çalışan bir HTML uygulaması. iPhone WhatsApp s
 - Tarayıcı yazdırma penceresinde A4 dikey seçin ve **Background graphics / Arka plan grafikleri** ayarını açık tutun.
 - Kenar boşluğunu mümkünse “None” veya “Minimum” yapın; her `.page` otomatik olarak sayfa kırar.
 - Chrome/Firefox’ta çevrimdışı çalışır; ek eklenti gerekmez.
+- Yazdırmadan önce arka plan grafiklerinin açık olduğundan emin olun; kapalıysa grafikler silik çıkar.
 
 ## Özellikler
 - Çift taraflı (Murat Kar, Rümeysa Akbulut) mesaj sınıflandırması ve toplamlar
