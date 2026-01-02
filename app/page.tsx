@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { BuildReportButton } from '../components/ui/BuildReportButton';
 
 export default function Home() {
   return (
@@ -9,17 +10,29 @@ export default function Home() {
           Bu proje, WhatsApp sohbet dökümlerinden deterministik, baskıya hazır çok sayfalı raporlar
           üretmek için hazırlanmış bir Next.js + TypeScript başlangıç iskeletidir.
         </p>
-        <ol className="list-decimal space-y-3 pl-5 text-gray-800">
-          <li>data/input klasörüne whatsapp.txt ve gsm.xlsx dosyalarını yerleştirin.</li>
-          <li>config.json dosyasını doldurun.</li>
-          <li>npm run all komutu ile raporu ve PDF çıktısını üretin.</li>
-        </ol>
-        <Link
-          href="/report/2025"
-          className="inline-flex w-fit items-center gap-2 rounded bg-accent px-4 py-2 text-white shadow"
-        >
-          Örnek raporu görüntüle
-        </Link>
+        <div className="rounded-xl bg-white p-4 shadow-sm">
+          <p className="mb-3 font-semibold text-gray-800">Input klasör yapısı</p>
+          <ul className="space-y-1 text-gray-800">
+            <li>
+              <strong>Yeni (tercih edilen):</strong> data/input/whatsapp/ → _chat.txt + medya dosyaları
+            </li>
+            <li>
+              <strong>Eski:</strong> data/input/whatsapp.txt + data/input/media/
+            </li>
+            <li>data/input/gsm.xlsx (opsiyonel, arama istatistikleri için)</li>
+            <li>root klasörde config.json</li>
+          </ul>
+        </div>
+        <div className="flex flex-wrap items-center gap-4">
+          <BuildReportButton refreshOnSuccess />
+          <BuildReportButton action="pdf" label="PDF Üret" />
+          <Link
+            href="/report/2025"
+            className="inline-flex w-fit items-center gap-2 rounded bg-primary px-4 py-2 text-white shadow"
+          >
+            Raporu görüntüle
+          </Link>
+        </div>
       </div>
     </section>
   );
