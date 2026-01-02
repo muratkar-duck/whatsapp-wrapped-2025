@@ -19,6 +19,13 @@ describe('parseLines', () => {
     expect(messages[0].type).toBe('image');
   });
 
+  it('detects media type from filename', () => {
+    const lines = ['10/02/2025, 21:30 - Murat: IMG-20250110-WA0001.jpg'];
+    const mediaIndex = new Map<string, 'image'>([['img-20250110-wa0001.jpg', 'image']]);
+    const messages = parseLines(lines, mediaIndex);
+    expect(messages[0].type).toBe('image');
+  });
+
   it('keeps multiline content', () => {
     const lines = ['12/05/2025, 21:00 - Murat: Çok satırlı', 'mesaj denemesi'];
     const messages = parseLines(lines);

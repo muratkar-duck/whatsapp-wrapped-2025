@@ -1,0 +1,56 @@
+import { spawn } from 'node:child_process';
+import { NextResponse } from 'next/server';
+
+const isLocalBuildAllowed = process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_BUILD === '1';
+
+interface CommandResult {
+  stdout: string;
+  stderr: string;
+  exitCode: number | null;
+}
+
+async function runCommand(command: string, args: string[]): Promise<CommandResult> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      cwd: process.cwd(),
+      env: process.env,
+      shell: true
+    });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout?.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+    child.stderr?.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+    child.on('error', (error) => reject(error));
+    child.on('close', (code) => {
+      if (code === 0) resolve({ stdout, stderr, exitCode: code });
+      else reject({ stdout, stderr, exitCode: code });
+    });
+  });
+}
+
+export async function POST() {
+  if (!isLocalBuildAllowed) {
+    return NextResponse.json({ error: 'Yerel build API sadece geliştirme ortamında açıktır.' }, { status: 403 });
+  }
+
+  try {
+    const result = await runCommand('npm', ['run', 'build:report']);
+    return NextResponse.json({ success: true, ...result });
+  } catch (error: any) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: error?.message ?? 'Rapor oluşturma sırasında hata oluştu.',
+        stdout: error?.stdout ?? '',
+        stderr: error?.stderr ?? '',
+        exitCode: error?.exitCode ?? null
+      },
+      { status: 500 }
+    );
+  }
+}

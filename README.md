@@ -24,9 +24,9 @@ npm install
 }
 ```
 
-   - `data/input/whatsapp.txt` : WhatsApp sohbet export (.txt)
-   - `data/input/media/` : WhatsApp medya klasörü (opsiyonel, şimdilik eşleştirme yok)
-   - `data/input/gsm.xlsx` : GSM arama dökümü
+   - **Yeni (tercih edilen)** `data/input/whatsapp/` klasörü: `_chat.txt` + medya dosyaları (IMG-*.jpg, VID-*.mp4, *.opus, *.webp ...)
+   - **Geriye dönük** `data/input/whatsapp.txt` + `data/input/media/`
+   - `data/input/gsm.xlsx` : GSM arama dökümü (opsiyonel)
 
 ## Komutlar
 
@@ -37,6 +37,13 @@ npm install
 - `npm run export:pdf` — Next.js build + Playwright ile `/report/2025` sayfasından PDF alır (`dist/wrapped_2025.pdf`).
 - `npm run all` — raporu ve PDF'i uçtan uca üretir.
 - `npm test` — WhatsApp satır parsere ait temel birim testleri.
+
+## Tek tıkla üretim (UI)
+
+- `/` ve `/report/2025` sayfalarındaki **Raporu Üret** butonu `npm run build:report` komutunu yerelde tetikler.
+- İsteğe bağlı **PDF Üret** butonu `npm run export:pdf` komutunu çağırır.
+- Güvenlik: sadece `NODE_ENV=development` veya `ENABLE_LOCAL_BUILD=1` iken çalışır; aksi hâlde API 403 döner.
+- Rapor üretimi tamamlanınca `/report/2025` otomatik yenilenir; hata durumunda kullanıcıya okunabilir mesaj gösterilir.
 
 ## Çıktılar
 
