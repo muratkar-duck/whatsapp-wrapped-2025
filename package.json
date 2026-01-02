@@ -1,0 +1,47 @@
+{
+  "name": "whatsapp-wrapped-2025",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest run",
+    "build:report": "npm run parse:whatsapp && npm run parse:gsm && npm run render:assets && tsx scripts/build-report.ts",
+    "parse:whatsapp": "tsx scripts/parse-whatsapp.ts",
+    "parse:gsm": "tsx scripts/parse-gsm-xlsx.ts",
+    "render:assets": "tsx scripts/render-assets.ts",
+    "export:pdf": "tsx scripts/export-pdf.ts",
+    "all": "npm run build:report && npm run export:pdf"
+  },
+  "dependencies": {
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "date-fns": "^3.6.0",
+    "exceljs": "^4.4.0",
+    "gray-matter": "^4.0.3",
+    "next": "^14.2.7",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "recharts": "^2.12.7",
+    "tailwindcss": "^3.4.13",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2",
+    "@types/node": "^22.7.4",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "autoprefixer": "^10.4.20",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.7",
+    "postcss": "^8.4.47",
+    "prettier": "^3.3.3",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "vitest": "^2.1.3"
+  }
+}
