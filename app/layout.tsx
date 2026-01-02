@@ -15,9 +15,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="text-xl font-semibold text-accent">
             Wrapped 2025
           </Link>
-          <nav className="text-sm text-gray-600">
-            <Link href="/report/2025" className="underline">
-              Örnek Rapor
+          <nav className="flex items-center gap-4 text-sm font-medium text-gray-700">
+            <Link href="/" className="transition hover:text-accent">
+              Ana Sayfa
+            </Link>
+            <Link href="/report/2025" className="transition hover:text-accent">
+              Raporu Görüntüle
+            </Link>
+            <Link href="/outputs" className="transition hover:text-accent">
+              Çıktılar
             </Link>
           </nav>
         </header>
