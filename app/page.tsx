@@ -1,37 +1,69 @@
 import Link from 'next/link';
-import { BuildReportButton } from '../components/ui/BuildReportButton';
+import { QuickStartPanel } from '../components/pages/QuickStartPanel';
 
 export default function Home() {
+  const faqs = [
+    {
+      q: 'WhatsApp export\'u nereye koyacağım?',
+      a: 'data/input/whatsapp/ içine _chat.txt ve medya dosyalarını ekleyin ya da klasik modda whatsapp.txt + media klasörünü kullanın.'
+    },
+    {
+      q: 'Raporu nasıl üretirim?',
+      a: 'Hızlı Başlangıç panelindeki “Raporu Üret” butonuna basın, logları hemen altında görün.'
+    },
+    {
+      q: 'PDF nereye kaydoluyor?',
+      a: 'PDF çıktısı dist/wrapped_2025.pdf dosyasına yazılır; Çıktılar sayfasından da kontrol edebilirsiniz.'
+    },
+    {
+      q: '0 mesaj görüyorsam ne demek?',
+      a: 'Çıktıdaki toplam mesaj 0 ise genelde _chat.txt/whatsapp.txt okunamamıştır; encodingin UTF-8 olduğundan emin olun.'
+    },
+    {
+      q: 'GSM excel opsiyonel mi?',
+      a: 'Evet, data/input/gsm.xlsx dosyası sadece arama istatistikleri için kullanılır; yoksa rapor yine üretilir.'
+    },
+    {
+      q: 'Medya koymazsam ne olur?',
+      a: 'Medya dosyaları opsiyoneldir; görsel bazlı grafikler boş dönebilir ama rapor üretilir.'
+    }
+  ];
+
   return (
     <section className="page">
-      <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-8">
         <h1 className="text-4xl font-bold text-primary">WhatsApp Wrapped 2025</h1>
         <p className="text-lg text-gray-700">
           Bu proje, WhatsApp sohbet dökümlerinden deterministik, baskıya hazır çok sayfalı raporlar
           üretmek için hazırlanmış bir Next.js + TypeScript başlangıç iskeletidir.
         </p>
-        <div className="rounded-xl bg-white p-4 shadow-sm">
-          <p className="mb-3 font-semibold text-gray-800">Input klasör yapısı</p>
-          <ul className="space-y-1 text-gray-800">
-            <li>
-              <strong>Yeni (tercih edilen):</strong> data/input/whatsapp/ → _chat.txt + medya dosyaları
-            </li>
-            <li>
-              <strong>Eski:</strong> data/input/whatsapp.txt + data/input/media/
-            </li>
-            <li>data/input/gsm.xlsx (opsiyonel, arama istatistikleri için)</li>
-            <li>root klasörde config.json</li>
-          </ul>
-        </div>
-        <div className="flex flex-wrap items-center gap-4">
-          <BuildReportButton refreshOnSuccess />
-          <BuildReportButton action="pdf" label="PDF Üret" />
-          <Link
-            href="/report/2025"
-            className="inline-flex w-fit items-center gap-2 rounded bg-primary px-4 py-2 text-white shadow"
-          >
-            Raporu görüntüle
-          </Link>
+        <QuickStartPanel />
+
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <h2 className="text-2xl font-semibold text-primary">SSS / Mini kullanım kılavuzu</h2>
+          <div className="mt-4 space-y-3">
+            {faqs.map((item) => (
+              <details key={item.q} className="group rounded-lg border border-gray-200 p-4">
+                <summary className="cursor-pointer list-none text-base font-semibold text-gray-900">
+                  {item.q}
+                </summary>
+                <p className="mt-2 text-sm text-gray-700 group-open:animate-fadeIn">{item.a}</p>
+              </details>
+            ))}
+          </div>
+          <div className="mt-4 text-sm text-gray-700">
+            <p>
+              Daha fazla detay için{' '}
+              <Link href="/outputs" className="font-semibold text-accent underline">
+                çıktı durumuna
+              </Link>{' '}
+              göz atabilir veya raporu{' '}
+              <Link href="/report/2025" className="font-semibold text-accent underline">
+                burada
+              </Link>{' '}
+              açabilirsiniz.
+            </p>
+          </div>
         </div>
       </div>
     </section>

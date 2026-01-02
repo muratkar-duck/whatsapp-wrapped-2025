@@ -1,6 +1,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import { BuildReportButton } from '../../../components/ui/BuildReportButton';
+import { OpenFolderButton } from '../../../components/ui/OpenFolderButton';
 import SummaryGrid from '../../../components/pages/SummaryGrid';
 import type { Report } from '../../../lib/data/types';
 import { reportSchema } from '../../../lib/data/schema';
@@ -69,12 +70,14 @@ async function getInputStatus() {
 
 export default async function ReportPage() {
   const [report, inputStatus] = await Promise.all([loadReport(), getInputStatus()]);
+  const hasReportData = Boolean(report && report.metrics.totalMessages > 0);
 
   const missing: { label: string; optional?: boolean }[] = [];
   if (!inputStatus.configExists) missing.push({ label: 'config.json yok' });
   if (!inputStatus.chatExists) missing.push({ label: 'WhatsApp chat dosyası yok' });
   if (!inputStatus.gsmExists) missing.push({ label: 'gsm.xlsx yok (opsiyonel)', optional: true });
-  if (inputStatus.chatExists && inputStatus.mediaCount === 0) missing.push({ label: 'medya klasörü boş veya yok (opsiyonel)', optional: true });
+  if (inputStatus.chatExists && inputStatus.mediaCount === 0)
+    missing.push({ label: 'medya klasörü boş veya yok (opsiyonel)', optional: true });
 
   const metaCard = (
     <div className="rounded-xl bg-white p-4 shadow-sm">
@@ -99,15 +102,15 @@ export default async function ReportPage() {
     </div>
   );
 
-  if (!report) {
+  if (!hasReportData) {
     return (
       <section className="page">
         <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-bold text-primary">Rapor bulunamadı</h1>
-          <p className="text-gray-700">dist/report.json yok veya boş. Aşağıdaki butondan raporu üretmeyi deneyin.</p>
-          <div className="flex flex-wrap items-center gap-4">
+          <h1 className="text-3xl font-bold text-primary">Henüz rapor üretilmedi</h1>
+          <p className="text-gray-700">dist/report.json yok, okunamıyor veya toplam mesaj 0 gözüküyor.</p>
+          <div className="flex flex-wrap items-center gap-3">
             <BuildReportButton refreshOnSuccess />
-            <BuildReportButton action="pdf" label="PDF Üret" />
+            <OpenFolderButton path="data/input" label="Input Klasörünü Aç" />
           </div>
           {missing.length ? (
             <div className="rounded-xl border border-dashed border-red-200 bg-red-50 p-4 text-red-800">
@@ -126,6 +129,19 @@ export default async function ReportPage() {
               ) : null}
             </div>
           ) : null}
+          <div className="rounded-xl bg-white p-4 shadow-sm">
+            <p className="font-semibold text-gray-900">Troubleshooting</p>
+            <ul className="mt-2 space-y-2 text-sm text-gray-800">
+              <li>_chat.txt yok / whatsapp.txt yok → data/input altına yerleştirildiğinden emin olun.</li>
+              <li>config.json yok → root dizinde bulunmalı.</li>
+              <li>Dosya encoding farklı olabilir (UTF-8 önerilir).</li>
+              <li>Build loglarını görmek için ana sayfadan üretim yap.</li>
+            </ul>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <BuildReportButton label="Raporu Üret" refreshOnSuccess />
+              <BuildReportButton action="pdf" label="PDF Üret" />
+            </div>
+          </div>
           {metaCard}
         </div>
       </section>
