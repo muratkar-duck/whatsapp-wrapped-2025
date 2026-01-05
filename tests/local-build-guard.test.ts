@@ -1,5 +1,6 @@
 import { describe, expect, it, beforeEach, afterAll } from 'vitest';
-import { enforceLocalBuildAccess, isLocalBuildAllowed } from '../app/api/_utils/local-build-guard';
+import { enforceLocalBuildAccess } from '../app/api/_utils/local-build-guard';
+import { isLocalBuildAllowed, localBuildHint } from '../lib/localBuild';
 
 const ORIGINAL_ENV = process.env;
 
@@ -14,7 +15,7 @@ describe('local build guard', () => {
 
   it('allows requests in development mode', () => {
     process.env.NODE_ENV = 'development';
-    const allowed = isLocalBuildAllowed(new Request('http://example.com/api/run-all'));
+    const allowed = isLocalBuildAllowed();
     expect(allowed).toBe(true);
   });
 
@@ -22,13 +23,17 @@ describe('local build guard', () => {
     process.env.NODE_ENV = 'production';
     delete process.env.ENABLE_LOCAL_BUILD;
 
-    const response = enforceLocalBuildAccess(new Request('http://example.com/api/run-all'));
+    const response = enforceLocalBuildAccess();
     expect(response?.status).toBe(403);
     const body = await response?.json();
     expect(body).toEqual({
-      ok: false,
-      error: 'LOCAL_BUILD_DISABLED',
-      hint: 'Set ENABLE_LOCAL_BUILD=1 or run in development.'
+      error: 'Orchestrator API erişimi reddedildi.',
+      hint: localBuildHint(),
+      details: {
+        nodeEnv: 'production',
+        enableLocalBuild: false,
+        platform: process.platform
+      }
     });
   });
 
@@ -36,15 +41,7 @@ describe('local build guard', () => {
     process.env.NODE_ENV = 'production';
     process.env.ENABLE_LOCAL_BUILD = '1';
 
-    const response = enforceLocalBuildAccess(new Request('http://example.com/api/build-report'));
-    expect(response).toBeNull();
-  });
-
-  it('allows localhost requests even in production', () => {
-    process.env.NODE_ENV = 'production';
-    delete process.env.ENABLE_LOCAL_BUILD;
-
-    const response = enforceLocalBuildAccess(new Request('http://127.0.0.1:3000/api/export-pdf'));
+    const response = enforceLocalBuildAccess();
     expect(response).toBeNull();
   });
 });

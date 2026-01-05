@@ -1,20 +1,22 @@
+import { spawn } from 'node:child_process';
+import path from 'node:path';
 import { NextRequest, NextResponse } from 'next/server';
 import { enforceLocalBuildAccess } from '../_utils/local-build-guard';
-import { spawn } from 'node:child_process';
 
 function createStreamResponse(enablePdf: boolean) {
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
-      const resolveCommand = (command: string) =>
-        process.platform === 'win32' && !command.endsWith('.cmd') ? `${command}.cmd` : command;
-      const args = ['tsx', 'scripts/run-all.ts'];
+      const scriptPath = path.join(process.cwd(), 'scripts', 'run-all.ts');
+      const tsxCli = path.join(process.cwd(), 'node_modules', 'tsx', 'dist', 'cli.js');
+
+      const args = [tsxCli, scriptPath];
       if (enablePdf) {
         args.push('--pdf');
       }
 
-      const child = spawn(resolveCommand('npx'), args, {
+      const child = spawn(process.execPath, args, {
         cwd: process.cwd(),
         env: process.env,
         shell: false

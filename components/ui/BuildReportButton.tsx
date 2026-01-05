@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useLocalBuildStatus } from '../hooks/useLocalBuildStatus';
 
 const ENDPOINTS = {
   report: '/api/build-report',
@@ -11,11 +12,6 @@ const ENDPOINTS = {
 type ActionType = keyof typeof ENDPOINTS;
 
 type Status = 'idle' | 'running' | 'success' | 'error';
-
-const isLocalBuildAllowed =
-  process.env.NODE_ENV === 'development' ||
-  process.env.NEXT_PUBLIC_ENABLE_LOCAL_BUILD === '1' ||
-  process.env.ENABLE_LOCAL_BUILD === '1';
 
 export function BuildReportButton({
   action = 'report',
@@ -43,16 +39,25 @@ export function BuildReportButton({
   const [message, setMessage] = useState<string | null>(null);
   const [stdout, setStdout] = useState('');
   const [stderr, setStderr] = useState('');
+  const [responseHint, setResponseHint] = useState<string | null>(null);
+  const { allowed: isLocalBuildAllowed, hint: localBuildHint } = useLocalBuildStatus();
 
   const endpoint = ENDPOINTS[action];
   const buttonLabel = label ?? (action === 'pdf' ? 'PDF Üret' : 'Raporu Üret');
 
   const runBuild = async () => {
-    if (!isLocalBuildAllowed) return;
+    if (isLocalBuildAllowed === false) {
+      setStatus('error');
+      setMessage('Orchestrator API erişimi reddedildi.');
+      setResponseHint(localBuildHint ?? 'ENABLE_LOCAL_BUILD=1 ile çalıştırın veya development modunda açın.');
+      onStatusChange?.('error');
+      return;
+    }
     setStatus('running');
     setMessage(action === 'pdf' ? 'PDF hazırlanıyor…' : 'Rapor derleniyor…');
     setStdout('');
     setStderr('');
+    setResponseHint(null);
     onStatusChange?.('running');
 
     try {
@@ -63,6 +68,7 @@ export function BuildReportButton({
         setMessage(data?.error ?? 'İşlem başarısız oldu.');
         setStdout(data?.stdout ?? '');
         setStderr(data?.stderr ?? '');
+        setResponseHint(data?.hint ?? localBuildHint ?? null);
         onStatusChange?.('error', { stdout: data?.stdout, stderr: data?.stderr });
         return;
       }
@@ -70,6 +76,7 @@ export function BuildReportButton({
       setMessage(action === 'pdf' ? 'PDF hazırlandı.' : 'Rapor hazır ✅');
       setStdout(data?.stdout ?? '');
       setStderr(data?.stderr ?? '');
+      setResponseHint(null);
       onStatusChange?.('success', { stdout: data?.stdout, stderr: data?.stderr });
       if (refreshOnSuccess) {
         router.refresh();
@@ -77,6 +84,7 @@ export function BuildReportButton({
     } catch (error: any) {
       setStatus('error');
       setMessage(error?.message ?? 'İşlem başlatılamadı.');
+      setResponseHint(localBuildHint ?? null);
       onStatusChange?.('error');
     }
   };
@@ -86,7 +94,7 @@ export function BuildReportButton({
       <button
         type="button"
         onClick={runBuild}
-        disabled={status === 'running' || !isLocalBuildAllowed}
+        disabled={status === 'running' || isLocalBuildAllowed === false}
         className="inline-flex items-center gap-2 rounded bg-accent px-4 py-2 text-white shadow disabled:opacity-60"
       >
         {status === 'running' ? 'Çalışıyor…' : buttonLabel}
@@ -100,7 +108,10 @@ export function BuildReportButton({
           {message}
         </p>
       ) : null}
-      {!isLocalBuildAllowed ? (
+      {responseHint ? (
+        <p className="mt-1 text-xs text-amber-700">{responseHint}</p>
+      ) : null}
+      {isLocalBuildAllowed === false ? (
         <span className="mt-2 inline-flex items-center gap-2 rounded-full bg-gray-200 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-gray-700">
           Sadece yerelde kullanılabilir
         </span>
