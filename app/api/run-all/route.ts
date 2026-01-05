@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { enforceLocalBuildAccess } from '../_utils/local-build-guard';
 import { spawn } from 'node:child_process';
-
-const isLocalBuildAllowed = process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_BUILD === '1';
 
 function createStreamResponse(enablePdf: boolean) {
   const encoder = new TextEncoder();
@@ -73,9 +72,8 @@ function createStreamResponse(enablePdf: boolean) {
 }
 
 export async function POST(request: NextRequest) {
-  if (!isLocalBuildAllowed) {
-    return NextResponse.json({ error: 'Yerel orchestrator sadece geliştirme ortamında açıktır.' }, { status: 403 });
-  }
+  const guardResponse = enforceLocalBuildAccess(request);
+  if (guardResponse) return guardResponse;
 
   const body = await request.json().catch(() => ({ pdf: false }));
   const enablePdf = Boolean(body?.pdf);

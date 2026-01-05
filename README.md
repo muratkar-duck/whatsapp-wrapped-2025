@@ -43,6 +43,7 @@ npm install
 - `/` ve `/report/2025` sayfalarındaki **Raporu Üret** butonu `npm run build:report` komutunu yerelde tetikler.
 - İsteğe bağlı **PDF Üret** butonu `npm run export:pdf` komutunu çağırır.
 - Güvenlik: sadece `NODE_ENV=development` veya `ENABLE_LOCAL_BUILD=1` iken çalışır; aksi hâlde API 403 döner.
+- Yerelde çalıştırmak için `ENABLE_LOCAL_BUILD=1 npm run dev` komutunu kullanabilir ya da Windows'ta `start.bat` dosyasını çift tıklayabilirsiniz (değişken otomatik ayarlanır).
 - Rapor üretimi tamamlanınca `/report/2025` otomatik yenilenir; hata durumunda kullanıcıya okunabilir mesaj gösterilir.
 
 ## Çıktılar
