@@ -9,12 +9,17 @@ interface CommandResult {
   exitCode: number | null;
 }
 
+function resolveCommand(command: string) {
+  return process.platform === 'win32' && !command.endsWith('.cmd') ? `${command}.cmd` : command;
+}
+
 async function runCommand(command: string, args: string[]): Promise<CommandResult> {
+  const executable = resolveCommand(command);
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
+    const child = spawn(executable, args, {
       cwd: process.cwd(),
       env: process.env,
-      shell: true
+      shell: false
     });
     let stdout = '';
     let stderr = '';

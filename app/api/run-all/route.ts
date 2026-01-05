@@ -8,15 +8,17 @@ function createStreamResponse(enablePdf: boolean) {
 
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
+      const resolveCommand = (command: string) =>
+        process.platform === 'win32' && !command.endsWith('.cmd') ? `${command}.cmd` : command;
       const args = ['tsx', 'scripts/run-all.ts'];
       if (enablePdf) {
         args.push('--pdf');
       }
 
-      const child = spawn('npx', args, {
+      const child = spawn(resolveCommand('npx'), args, {
         cwd: process.cwd(),
         env: process.env,
-        shell: true
+        shell: false
       });
 
       const handleLine = (line: string, isError = false) => {
