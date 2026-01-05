@@ -46,7 +46,16 @@ export function OneClickRunner() {
   }, [logs, scrollToBottom]);
 
   const onRun = async () => {
-    if (!isLocalBuildAllowed) return;
+    if (!isLocalBuildAllowed) {
+      setStatus('error');
+      addLog({
+        id: crypto.randomUUID(),
+        level: 'error',
+        message: 'Orchestrator API erişimi reddedildi.',
+        hint: 'ENABLE_LOCAL_BUILD=1 ile çalıştırın veya development modunda açın.'
+      });
+      return;
+    }
     setStatus('running');
     setLogs([]);
     let hadError = false;
@@ -66,7 +75,8 @@ export function OneClickRunner() {
         addLog({
           id: crypto.randomUUID(),
           level: 'error',
-          message: payload?.error ?? 'Orchestrator API erişimi reddedildi.'
+          message: payload?.error ?? 'Orchestrator API erişimi reddedildi.',
+          hint: payload?.hint
         });
         return;
       }
