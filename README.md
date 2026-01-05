@@ -2,6 +2,8 @@
 
 Yerelde çalışan, deterministik ve baskıya hazır bir "Wrapped 2025" rapor iskeleti. WhatsApp metin dökümü ve GSM arama verisinden özet istatistikler üretir, Next.js App Router ile PDF'e aktarır.
 
+> **Önerilen Node sürümü:** 20 LTS. Daha yeni sürümlerde (22+) uyarı alabilirsiniz fakat geliştirme amacıyla çalışmaya devam eder.
+
 ## Kurulum
 
 1. Bağımlılıkları yükleyin:
@@ -28,6 +30,8 @@ npm install
    - **Geriye dönük** `data/input/whatsapp.txt` + `data/input/media/`
    - `data/input/gsm.xlsx` : GSM arama dökümü (opsiyonel)
 
+> Hızlı kontrol: `npm run doctor` komutu Node/npm sürümünüzü ve `dist/` ile `data/` klasörlerine yazma izinlerini doğrular.
+
 ## Komutlar
 
 - `npm run parse:whatsapp` — whatsapp.txt dosyasını `dist/messages.jsonl` olarak normalize eder.
@@ -48,16 +52,17 @@ npm install
 
 ## Windows Quick Start
 
-1. [Node.js](https://nodejs.org/) kurulu olduğundan emin olun.
-2. Depo kökünde `start.bat` dosyasını çift tıklayın.
-   - `ENABLE_LOCAL_BUILD=1` ve `NODE_ENV=development` otomatik set edilir.
-   - `node_modules` eksikse `npm install` çalışır.
-   - `npm run dev` başlar; komut penceresi açık kalır ve tarayıcıda `http://localhost:3000` açılır.
+1. [Node.js 20 LTS](https://nodejs.org/) kurulu olduğundan emin olun (Node 22+ için sadece uyarı verilir).
+2. Depoyu klonlayın ve `start.bat` dosyasını çift tıklayın ya da PowerShell'de çalıştırın.
+   - Betik kendi dizinine geçer, `node_modules` yoksa `npm install` çalıştırır.
+   - `ENABLE_LOCAL_BUILD=1` ve `NODE_ENV=development` otomatik set edilir; orchestrator erişim engeli kalkar.
+   - Son adımda Next.js dev sunucusu çalışır ve tarayıcı `http://localhost:3000` adresini açar.
+3. `data/input/` altına `_chat.txt` veya `whatsapp.txt`, gerekirse `gsm.xlsx` dosyalarını koyun; arayüzden **Raporu Oluştur** butonuna tıklayın.
 
 PowerShell ile manuel başlatmak isterseniz:
 
 ```powershell
-$env:ENABLE_LOCAL_BUILD="1"; npm run dev
+$env:ENABLE_LOCAL_BUILD="1"; $env:NEXT_PUBLIC_ENABLE_LOCAL_BUILD="1"; npm run dev
 ```
 
 ## Prod denemesi ve erişim ipuçları
@@ -68,6 +73,17 @@ $env:ENABLE_LOCAL_BUILD="1"; npm run dev
   - PowerShell: `$env:ENABLE_LOCAL_BUILD="1"; npm run build; npm run start`
 - UI ve API aynı kontrolü paylaşır; bloklandığında arayüz "ENABLE_LOCAL_BUILD=1 ile çalıştırın veya npm run dev kullanın" ipucunu gösterir.
 - Geliştirme modunda (`npm run dev`) bu ayar otomatik olarak etkin kabul edilir.
+
+## Troubleshooting
+
+- **MODULE_NOT_FOUND: ...\\node_modules\\tsx\\dist\\cli.js**
+  - `npm install` komutunu çalıştırın veya `start.bat` betiğiyle otomatik yüklenmesini sağlayın. `tsx` artık devDependency olarak pakete dahil; ekstra kurulum gerektirmez.
+- **Orchestrator API erişimi reddedildi.**
+  - Geliştirme modunda çalıştığınızdan emin olun (`npm run dev` veya `start.bat`).
+  - Manuel başlatırken `ENABLE_LOCAL_BUILD=1` ve gerekiyorsa `NEXT_PUBLIC_ENABLE_LOCAL_BUILD=1` ortam değişkenlerini set edin.
+- **"Klasör açılamadı." (open-folder endpoint)**
+  - Hedef klasörün var olduğundan ve Windows'ta `explorer.exe` erişilebilir olduğundan emin olun.
+  - Erişim engeli devam ederse klasörü elle açabilir veya dosya izinlerini kontrol edebilirsiniz.
 
 ## Çıktılar
 
