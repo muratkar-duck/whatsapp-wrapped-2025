@@ -10,10 +10,14 @@ const LEGACY_CHAT_PATH = path.join(BASE_INPUT_DIR, 'whatsapp.txt');
 const LEGACY_MEDIA_DIR = path.join(BASE_INPUT_DIR, 'media');
 const OUTPUT_PATH = path.join(process.cwd(), 'dist', 'messages.jsonl');
 
-const LINE_REGEX = /^(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4}),?\s+(\d{1,2}:\d{2})(?:\s*[\u202f ]?[AP]M)?\s+-\s+([^:]+?):\s+(.*)$/;
+const DEFAULT_LINE_REGEX = /^(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4}),?\s+(\d{1,2}:\d{2})(?:\s*[\u202f ]?[AP]M)?\s+-\s+([^:]+?):\s+(.*)$/;
+const IOS_BRACKET_LINE_REGEX = /^\[(\d{2})\.(\d{2})\.(\d{4})[ ,]\s*(\d{2}):(\d{2})(?::(\d{2}))?\]\s+([^:]+):\s?(.*)$/;
+const IOS_BRACKET_DETECT_REGEX = /^\[\d{2}\.\d{2}\.\d{4}[ ,]\s*\d{2}:\d{2}(:\d{2})?\]/;
+const INVISIBLE_CHARS_REGEX = /[\u200e\u200f\ufeff\u202a-\u202e]/g;
 const EMOJI_REGEX = /([\p{Emoji_Presentation}\p{Extended_Pictographic}])/u;
 
 type InputMode = 'export-folder' | 'legacy';
+type ChatFormat = 'default' | 'ios-bracket';
 
 async function ensureDist() {
   await fs.mkdir(path.dirname(OUTPUT_PATH), { recursive: true });
@@ -26,6 +30,10 @@ async function fileExists(target: string) {
   } catch {
     return false;
   }
+}
+
+function sanitizeLine(line: string) {
+  return line.replace(INVISIBLE_CHARS_REGEX, '');
 }
 
 function inferType(text: string, mediaIndex?: Map<string, NormalizedMessage['type']>): NormalizedMessage['type'] {
@@ -45,26 +53,71 @@ function buildId(ts: string, sender: string, text: string, index: number) {
   return `${Date.parse(ts)}-${sender.replace(/\s+/g, '')}-${index}-${slug}`;
 }
 
-export function parseLines(lines: string[], mediaIndex?: Map<string, NormalizedMessage['type']>): NormalizedMessage[] {
+function normalizeSender(sender: string) {
+  return sender.replace(/\s+/g, ' ').trim();
+}
+
+function toIsoDate({
+  day,
+  month,
+  year,
+  hour,
+  minute,
+  second
+}: {
+  day: string;
+  month: string;
+  year: string;
+  hour: string;
+  minute: string;
+  second?: string;
+}) {
+  const normalizedYear = year.length === 2 ? Number(`20${year}`) : Number(year);
+  const date = new Date(Number(normalizedYear), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second ?? '0'));
+  return date.toISOString();
+}
+
+function detectFormat(lines: string[]): ChatFormat {
+  const sample = lines
+    .map((line) => sanitizeLine(line))
+    .filter((line) => Boolean(line.trim()))
+    .slice(0, 200);
+
+  if (sample.some((line) => IOS_BRACKET_DETECT_REGEX.test(line))) return 'ios-bracket';
+
+  return 'default';
+}
+
+function resolveLineRegex(format: ChatFormat) {
+  if (format === 'ios-bracket') return IOS_BRACKET_LINE_REGEX;
+  return DEFAULT_LINE_REGEX;
+}
+
+export function parseLines(
+  lines: string[],
+  mediaIndex?: Map<string, NormalizedMessage['type']>,
+  format: ChatFormat = 'default'
+): NormalizedMessage[] {
   const messages: NormalizedMessage[] = [];
-  let buffer: { date: string; time: string; sender: string; content: string } | null = null;
+  let buffer: { ts: string; sender: string; content: string; rawLine: string } | null = null;
+
+  const lineRegex = resolveLineRegex(format);
+  const sanitizedLines = lines.map((line) => sanitizeLine(line));
 
   const flush = () => {
     if (!buffer) return;
-    const tsString = `${buffer.date} ${buffer.time}`;
-    const ts = new Date(tsString).toISOString();
     const text = buffer.content.trim();
     const hasEmoji = EMOJI_REGEX.test(text);
     const message: NormalizedMessage = {
-      id: buildId(tsString, buffer.sender, text, messages.length),
-      ts,
+      id: buildId(buffer.ts, buffer.sender, text, messages.length),
+      ts: buffer.ts,
       sender: buffer.sender,
       text,
       type: inferType(text, mediaIndex),
       hasEmoji,
       wordCount: text ? text.split(/\s+/).filter(Boolean).length : 0,
       isDeleted: text.toLowerCase().includes('bu mesaj silindi') || text.toLowerCase().includes('message deleted'),
-      rawLineRef: tsString
+      rawLineRef: buffer.rawLine
     };
     const result = messageSchema.safeParse(message);
     if (result.success) {
@@ -73,16 +126,30 @@ export function parseLines(lines: string[], mediaIndex?: Map<string, NormalizedM
     buffer = null;
   };
 
-  for (const line of lines) {
-    const match = line.match(LINE_REGEX);
+  for (const line of sanitizedLines) {
+    const match = line.match(lineRegex);
     if (match) {
       flush();
-      buffer = {
-        date: match[1],
-        time: match[2],
-        sender: match[3].trim(),
-        content: match[4].trim()
-      };
+      if (format === 'ios-bracket') {
+        const [, day, month, year, hour, minute, second, sender, content] = match;
+        buffer = {
+          ts: toIsoDate({ day, month, year, hour, minute, second }),
+          sender: normalizeSender(sender),
+          content: content.trim(),
+          rawLine: line
+        };
+      } else {
+        const dateParts = match[1].split(/[\/\.\-]/);
+        const [day, month, year] = dateParts;
+        const [hour, minute] = match[2].split(':');
+        const second = undefined;
+        buffer = {
+          ts: toIsoDate({ day, month, year, hour, minute, second }),
+          sender: normalizeSender(match[3]),
+          content: match[4].trim(),
+          rawLine: line
+        };
+      }
     } else if (buffer) {
       buffer.content += `\n${line}`;
     }
@@ -125,15 +192,40 @@ async function resolveInput(): Promise<{ chatPath: string; mediaIndex: Map<strin
   return { chatPath, mediaIndex, mode };
 }
 
+function maskSampleLine(line: string) {
+  if (!line) return '[..] <NAME>: <TEXT>';
+  const dateMasked = line
+    .replace(IOS_BRACKET_DETECT_REGEX, '[..]')
+    .replace(/^(\d{1,2}[\/\.\-]\d{1,2}[\/\.\-]\d{2,4}),?\s+\d{1,2}:\d{2}(?:\s*[\u202f ]?[AP]M)?\s+-\s+/, '[..] ');
+  const colonIndex = dateMasked.indexOf(':');
+  if (colonIndex !== -1) {
+    return `${dateMasked.slice(0, colonIndex).trim()} <NAME>: <TEXT>`;
+  }
+  return '[..] <NAME>: <TEXT>';
+}
+
+function buildFormatHint(sampleLine: string) {
+  const masked = maskSampleLine(sampleLine);
+  const supported =
+    'Desteklenen formatlar: "12/01/2025, 09:12 - Kişi: Mesaj" · "1.02.25 10:01 - Kişi: Mesaj" · "[18.04.2025 13:42] Kişi: Mesaj"';
+  return `WhatsApp export formatı tanınmadı veya regex eşleşmedi.\nİlk satır örneği (maskeli): ${masked}\n${supported}`;
+}
+
 export async function parseWhatsapp() {
   await ensureDist();
   const { chatPath, mediaIndex, mode } = await resolveInput();
   const content = await fs.readFile(chatPath, 'utf-8');
-  const lines = content.split(/\r?\n/).filter(Boolean);
-  const parsed = parseLines(lines, mediaIndex);
+  const rawLines = content.split(/\r?\n/);
+  const sanitizedLines = rawLines.map((line) => sanitizeLine(line));
+  const format = detectFormat(sanitizedLines);
+  const parsed = parseLines(sanitizedLines, mediaIndex, format);
+  if (parsed.length === 0) {
+    const sample = sanitizedLines.find((line) => Boolean(line.trim())) ?? '';
+    throw new Error(buildFormatHint(sample));
+  }
   const out = parsed.map((msg) => JSON.stringify(msg)).join('\n');
   await fs.writeFile(OUTPUT_PATH, out, 'utf-8');
-  console.log(`Parsed ${parsed.length} messages (${mode}) → ${OUTPUT_PATH}`);
+  console.log(`Parsed ${parsed.length} messages (${mode}, ${format}) → ${OUTPUT_PATH}`);
 }
 
 const isDirectRun = fileURLToPath(import.meta.url) === process.argv[1];

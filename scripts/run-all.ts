@@ -62,12 +62,17 @@ function streamLines(data: Buffer, step: RunnerStep, stream: 'stdout' | 'stderr'
   });
 }
 
+function resolveCommand(command: string) {
+  return process.platform === 'win32' && !command.endsWith('.cmd') ? `${command}.cmd` : command;
+}
+
 async function runCommand(command: string, args: string[], step: RunnerStep) {
+  const executable = resolveCommand(command);
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(command, args, {
+    const child = spawn(executable, args, {
       cwd: process.cwd(),
       env: process.env,
-      shell: true
+      shell: false
     });
 
     child.stdout?.on('data', (chunk) => streamLines(chunk, step, 'stdout'));
@@ -90,18 +95,18 @@ async function runCommand(command: string, args: string[], step: RunnerStep) {
 async function ensureMessagesExist() {
   try {
     const content = await fs.readFile(OUTPUT_MESSAGES_PATH, 'utf-8');
-    const count = content
-      .split(/\n/)
-      .filter(Boolean)
-      .length;
+      const count = content
+        .split(/\n/)
+        .filter(Boolean)
+        .length;
 
-    if (count === 0) {
-      throw new RunnerError(
-        'Sohbet okundu ama 0 mesaj bulundu',
-        'parse',
-        'Dosya encoding UTF-8 olmayabilir'
-      );
-    }
+      if (count === 0) {
+        throw new RunnerError(
+          'WhatsApp export formatı tanınmadı veya regex eşleşmedi',
+          'parse',
+          'İlk satır örneği (maskeli): [..] <NAME>: <TEXT> · Desteklenen formatlar: 12/01/2025, 09:12 - Kişi: Mesaj · 1.02.25 10:01 - Kişi: Mesaj · [18.04.2025 13:42] Kişi: Mesaj'
+        );
+      }
   } catch (error: any) {
     if (error instanceof RunnerError) throw error;
     throw new RunnerError(

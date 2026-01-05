@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const command = process.platform === 'win32' ? 'explorer.exe' : process.platform === 'darwin' ? 'open' : 'xdg-open';
 
     return new Promise((resolve) => {
-      const child = spawn(command, [normalized], { shell: true });
+      const child = spawn(command, [normalized], { shell: false });
       child.on('error', (error) => {
         resolve(NextResponse.json({ error: error.message }, { status: 500 }));
       });

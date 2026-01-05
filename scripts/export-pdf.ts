@@ -3,9 +3,12 @@ import path from 'node:path';
 import { chromium } from '@playwright/test';
 import { promises as fs } from 'node:fs';
 
+const resolveCommand = (command: string) => (process.platform === 'win32' && !command.endsWith('.cmd') ? `${command}.cmd` : command);
+
 async function runCommand(cmd: string, args: string[]) {
+  const executable = resolveCommand(cmd);
   return new Promise<void>((resolve, reject) => {
-    const child = spawn(cmd, args, { stdio: 'inherit', shell: true });
+    const child = spawn(executable, args, { stdio: 'inherit', shell: false });
     child.on('exit', (code) => {
       if (code === 0) resolve();
       else reject(new Error(`${cmd} exited with code ${code}`));
@@ -15,9 +18,9 @@ async function runCommand(cmd: string, args: string[]) {
 
 async function startServer() {
   await runCommand('npm', ['run', 'build']);
-  const proc = spawn('npm', ['run', 'start', '--', '--hostname', '0.0.0.0', '--port', '3000'], {
+  const proc = spawn(resolveCommand('npm'), ['run', 'start', '--', '--hostname', '0.0.0.0', '--port', '3000'], {
     stdio: 'inherit',
-    shell: true
+    shell: false
   });
   await new Promise((res) => setTimeout(res, 4000));
   return proc;

@@ -32,4 +32,16 @@ describe('parseLines', () => {
     expect(messages[0].text.includes('satırlı')).toBe(true);
     expect(messages[0].text.includes('\nmesaj denemesi')).toBe(true);
   });
+
+  it('parses bracketed iOS export with optional comma and seconds', () => {
+    const lines = [
+      '[18.04.2025 13:42:19] R\u200fümeysa Akbulut: Merhaba',
+      '[18.04.2025, 13:43] Murat: Nasılsın?',
+      'Devam satırı'
+    ];
+    const messages = parseLines(lines, undefined, 'ios-bracket');
+    expect(messages).toHaveLength(2);
+    expect(messages[0].sender).toBe('Rümeysa Akbulut');
+    expect(messages[1].text).toContain('Devam satırı');
+  });
 });
