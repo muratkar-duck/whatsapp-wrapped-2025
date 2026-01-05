@@ -37,6 +37,14 @@ export default function Home() {
           Bu proje, WhatsApp sohbet dökümlerinden deterministik, baskıya hazır çok sayfalı raporlar
           üretmek için hazırlanmış bir Next.js + TypeScript başlangıç iskeletidir.
         </p>
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <h2 className="text-xl font-semibold text-primary">Nasıl çalışır?</h2>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-gray-800">
+            <li>WhatsApp klasörünü <code className="rounded bg-gray-100 px-2 py-[2px]">data/input/whatsapp</code> içine koy.</li>
+            <li>Tek tık panelinden raporu oluştur; logları canlı takip et.</li>
+            <li>PDF çıktısını <code className="rounded bg-gray-100 px-2 py-[2px]">dist/wrapped_2025.pdf</code> olarak kaydet.</li>
+          </ol>
+        </div>
         <QuickStartPanel />
 
         <div className="rounded-2xl bg-white p-6 shadow-sm">

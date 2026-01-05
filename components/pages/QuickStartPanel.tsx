@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { BuildReportButton } from '../ui/BuildReportButton';
+import { OneClickRunner } from '../ui/OneClickRunner';
 import { OpenFolderButton } from '../ui/OpenFolderButton';
 
 type Logs = { stdout?: string; stderr?: string };
@@ -36,6 +37,8 @@ export function QuickStartPanel() {
         </div>
         <OpenFolderButton path="data/input" />
       </div>
+
+      <OneClickRunner />
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-xl border border-gray-200 p-4">
