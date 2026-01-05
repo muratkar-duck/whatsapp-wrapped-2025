@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useLocalBuildStatus } from '../hooks/useLocalBuildStatus';
 
 type RunnerStatus = 'idle' | 'running' | 'success' | 'error';
 type LogLevel = 'info' | 'success' | 'error';
@@ -20,16 +21,12 @@ type LogEntry = {
   hint?: string;
 };
 
-const isLocalBuildAllowed =
-  process.env.NODE_ENV === 'development' ||
-  process.env.NEXT_PUBLIC_ENABLE_LOCAL_BUILD === '1' ||
-  process.env.ENABLE_LOCAL_BUILD === '1';
-
 export function OneClickRunner() {
   const [status, setStatus] = useState<RunnerStatus>('idle');
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [withPdf, setWithPdf] = useState(true);
   const logContainerRef = useRef<HTMLDivElement>(null);
+  const { allowed: isLocalBuildAllowed, hint: localBuildHint } = useLocalBuildStatus();
 
   const addLog = useCallback((entry: LogEntry) => {
     setLogs((prev) => [...prev, entry]);
@@ -46,13 +43,13 @@ export function OneClickRunner() {
   }, [logs, scrollToBottom]);
 
   const onRun = async () => {
-    if (!isLocalBuildAllowed) {
+    if (isLocalBuildAllowed === false) {
       setStatus('error');
       addLog({
         id: crypto.randomUUID(),
         level: 'error',
         message: 'Orchestrator API erişimi reddedildi.',
-        hint: 'ENABLE_LOCAL_BUILD=1 ile çalıştırın veya development modunda açın.'
+        hint: localBuildHint ?? 'ENABLE_LOCAL_BUILD=1 ile çalıştırın veya development modunda açın.'
       });
       return;
     }
@@ -76,7 +73,7 @@ export function OneClickRunner() {
           id: crypto.randomUUID(),
           level: 'error',
           message: payload?.error ?? 'Orchestrator API erişimi reddedildi.',
-          hint: payload?.hint
+          hint: payload?.hint ?? localBuildHint
         });
         return;
       }
@@ -152,7 +149,7 @@ export function OneClickRunner() {
             />
             PDF de üret
           </label>
-          {!isLocalBuildAllowed ? (
+          {isLocalBuildAllowed === false ? (
             <span className="rounded-full bg-gray-200 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-gray-700">
               Sadece yerelde kullanılabilir
             </span>
@@ -163,7 +160,7 @@ export function OneClickRunner() {
       <button
         type="button"
         onClick={onRun}
-        disabled={status === 'running' || !isLocalBuildAllowed}
+        disabled={status === 'running' || isLocalBuildAllowed === false}
         className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 py-3 text-center text-lg font-semibold text-white shadow hover:bg-accent/90 disabled:opacity-60"
       >
         {status === 'running' ? 'Çalışıyor…' : 'Raporu Oluştur (Tek Tık)'}

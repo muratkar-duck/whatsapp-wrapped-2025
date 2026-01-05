@@ -46,6 +46,29 @@ npm install
 - Yerelde çalıştırmak için `ENABLE_LOCAL_BUILD=1 npm run dev` komutunu kullanabilir ya da Windows'ta `start.bat` dosyasını çift tıklayabilirsiniz (değişken otomatik ayarlanır).
 - Rapor üretimi tamamlanınca `/report/2025` otomatik yenilenir; hata durumunda kullanıcıya okunabilir mesaj gösterilir.
 
+## Windows Quick Start
+
+1. [Node.js](https://nodejs.org/) kurulu olduğundan emin olun.
+2. Depo kökünde `start.bat` dosyasını çift tıklayın.
+   - `ENABLE_LOCAL_BUILD=1` ve `NODE_ENV=development` otomatik set edilir.
+   - `node_modules` eksikse `npm install` çalışır.
+   - `npm run dev` başlar; komut penceresi açık kalır ve tarayıcıda `http://localhost:3000` açılır.
+
+PowerShell ile manuel başlatmak isterseniz:
+
+```powershell
+$env:ENABLE_LOCAL_BUILD="1"; npm run dev
+```
+
+## Prod denemesi ve erişim ipuçları
+
+- **Varsayılan davranış:** Prod build çalışırken orchestrator API kapalıdır ve `Orchestrator API erişimi reddedildi.` hatası 403 ile döner.
+- **Bilinçli olarak açmak için:**
+  - Windows CMD: `set ENABLE_LOCAL_BUILD=1 && npm run build && npm run start`
+  - PowerShell: `$env:ENABLE_LOCAL_BUILD="1"; npm run build; npm run start`
+- UI ve API aynı kontrolü paylaşır; bloklandığında arayüz "ENABLE_LOCAL_BUILD=1 ile çalıştırın veya npm run dev kullanın" ipucunu gösterir.
+- Geliştirme modunda (`npm run dev`) bu ayar otomatik olarak etkin kabul edilir.
+
 ## Çıktılar
 
 `dist/` klasöründe:

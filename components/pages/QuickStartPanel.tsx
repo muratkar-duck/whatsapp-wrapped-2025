@@ -5,21 +5,18 @@ import { useMemo, useState } from 'react';
 import { BuildReportButton } from '../ui/BuildReportButton';
 import { OneClickRunner } from '../ui/OneClickRunner';
 import { OpenFolderButton } from '../ui/OpenFolderButton';
+import { useLocalBuildStatus } from '../hooks/useLocalBuildStatus';
 
 type Logs = { stdout?: string; stderr?: string };
-
-const isLocalBuildAllowed =
-  process.env.NODE_ENV === 'development' ||
-  process.env.NEXT_PUBLIC_ENABLE_LOCAL_BUILD === '1' ||
-  process.env.ENABLE_LOCAL_BUILD === '1';
 
 export function QuickStartPanel() {
   const [reportStatus, setReportStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
   const [pdfStatus, setPdfStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
   const [reportLogs, setReportLogs] = useState<Logs>({});
   const [pdfLogs, setPdfLogs] = useState<Logs>({});
+  const { allowed: isLocalBuildAllowed } = useLocalBuildStatus();
 
-  const reportButtonDisabled = !isLocalBuildAllowed;
+  const reportButtonDisabled = isLocalBuildAllowed === false;
 
   const statusLabel = useMemo(() => {
     if (reportStatus === 'running') return 'Rapor derleniyor…';
