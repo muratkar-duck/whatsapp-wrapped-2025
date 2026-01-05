@@ -17,6 +17,9 @@ if not exist node_modules (
   npm install
 )
 
+set ENABLE_LOCAL_BUILD=1
+echo Orchestrator API ENABLE_LOCAL_BUILD=1 ile aktif edildi.
+
 echo Gelistirme sunucusu baslatiliyor...
 start "Wrapped 2025" http://localhost:3000
 npm run dev

@@ -1,13 +1,11 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { NextResponse } from 'next/server';
-
-const isLocalBuildAllowed = process.env.NODE_ENV === 'development' || process.env.ENABLE_LOCAL_BUILD === '1';
+import { enforceLocalBuildAccess } from '../_utils/local-build-guard';
 
 export async function POST(request: Request) {
-  if (!isLocalBuildAllowed) {
-    return NextResponse.json({ error: 'Yerel dosya açma yalnızca geliştirme ortamında kullanılabilir.' }, { status: 403 });
-  }
+  const guardResponse = enforceLocalBuildAccess(request);
+  if (guardResponse) return guardResponse;
 
   try {
     const body = await request.json();
