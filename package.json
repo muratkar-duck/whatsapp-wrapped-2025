@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
+    "doctor": "node -v && npm -v && node -e \"const fs = require('fs');['dist','data'].forEach((dir)=>{try{fs.accessSync(dir, fs.constants.W_OK);console.log(dir + ': yazma izni OK');}catch(err){console.error(dir + ': yazma izni HATA - ' + err.message);process.exitCode=1;}});\"",
     "build:report": "npm run parse:whatsapp && npm run parse:gsm && npm run render:assets && tsx scripts/build-report.ts",
     "parse:whatsapp": "tsx scripts/parse-whatsapp.ts",
     "parse:gsm": "tsx scripts/parse-gsm-xlsx.ts",
@@ -40,7 +41,7 @@
     "eslint-config-next": "^14.2.7",
     "postcss": "^8.4.47",
     "prettier": "^3.3.3",
-    "tsx": "^4.19.1",
+    "tsx": "^4.19.0",
     "typescript": "^5.6.2",
     "vitest": "^2.1.3"
   }
